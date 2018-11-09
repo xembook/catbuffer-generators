@@ -23,15 +23,23 @@ class ImplementationGenerator(CppGenerator):
             self.append('m_{NAME} = {NAME};'.format(NAME=param_name))
         elif field_kind == FieldKind.BUFFER:
             self.append('''if (0 == {NAME}.Size)
-\tCATAPULT_THROW_INVALID_ARGUMENT("argument cannot be empty");
+\tCATAPULT_THROW_INVALID_ARGUMENT("argument `{NAME}` cannot be empty");
 
 if (!m_{NAME}.empty())
-\tCATAPULT_THROW_RUNTIME_ERROR("field already set");
+\tCATAPULT_THROW_RUNTIME_ERROR("`{NAME}` field already set");
 
 m_{NAME}.resize({NAME}.Size);
 m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);'''.format(NAME=param_name))
         else:
-            self.append('m_{FIELD}.push_back({PARAM});'.format(FIELD=field['name'], PARAM=param_name))
+            if 'sort_key' in field:
+                format_string = 'InsertSorted(m_{FIELD}, {PARAM}, [](const auto& lhs, const auto& rhs) {{{{'
+                self.append(format_string.format(FIELD=field['name'], PARAM=param_name))
+                self.indent += 1
+                self.append('return lhs.{SORT_KEY} < rhs.{SORT_KEY};'.format(SORT_KEY=capitalize(field['sort_key'])))
+                self.indent -= 1
+                self.append('}});')
+            else:
+                self.append('m_{FIELD}.push_back({PARAM});'.format(FIELD=field['name'], PARAM=param_name))
         self.indent -= 1
         self.append('}}\n')
 
@@ -96,7 +104,7 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);'''.format(NAME=param_
         self.append('auto pTransaction = createTransaction<TransactionType>(size);')
         self.append('')
 
-        self.append('// 2. set transaction fields and sizes')
+        self.append('// 2. set fixed transaction fields')
 
         # set non-variadic fields
         for field in self.schema[self.transaction_body_name()]['layout']:
@@ -116,7 +124,7 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);'''.format(NAME=param_
                     break
         self.append('')
 
-        self.append('// 3. set variable transaction fields')
+        self.append('// 3. set transaction attachments')
         self._foreach_builder_field(self._generate_build_variable_fields)
 
         self.append('')

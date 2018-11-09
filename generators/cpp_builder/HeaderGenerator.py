@@ -1,4 +1,4 @@
-from .CppGenerator import CppGenerator, FieldKind, uncapitalize
+from .CppGenerator import CppGenerator, FieldKind
 
 # note: part of formatting happens in CppGenerator, so whenever literal brace needs
 # to be produced, it needs to be doubled here
@@ -27,17 +27,16 @@ class HeaderGenerator(CppGenerator):
         self.append('')
         self.indent -= 1
 
-    def _add_comment(self, field_kind, field):
+    def _add_comment(self, field_kind, field, param_name):
         comments = {
             FieldKind.SIMPLE: 'Sets the {COMMENT} field to \\a {NAME}.',
             FieldKind.BUFFER: 'Sets the {COMMENT} field to \\a {NAME}.',
             FieldKind.VECTOR: 'Adds \\a {NAME} to {COMMENT}.'
         }
-        name = field['name'] if field_kind != FieldKind.VECTOR else uncapitalize(field['type'])
-        self.append('/// ' + comments[field_kind].format(COMMENT=field['comments'], NAME=name))
+        self.append('/// ' + comments[field_kind].format(COMMENT=field['comments'], NAME=param_name))
 
     def _generate_setter(self, field_kind, field, full_setter_name, param_name):
-        self._add_comment(field_kind, field)
+        self._add_comment(field_kind, field, param_name)
         self.append('void {};\n'.format(full_setter_name))
 
     def _setters(self):
