@@ -1,14 +1,10 @@
 from .CppGenerator import CppGenerator, FieldKind, uncapitalize
-import re
 
 # note: part of formatting happens in CppGenerator, so whenever literal brace needs
 # to be produced, it needs to be doubled here
 
 
 class HeaderGenerator(CppGenerator):
-    def __init__(self, schema, name):
-        super(HeaderGenerator, self).__init__(schema, name)
-
     def _add_includes(self):
         self.append("""#pragma once
 #include "TransactionBuilder.h"

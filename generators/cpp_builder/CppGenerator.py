@@ -1,9 +1,9 @@
+# pylint: disable=too-few-public-methods
 from abc import ABC, abstractmethod
 from enum import Enum
 import json
 import os
 import re
-import string
 
 SUFFIX = 'Transaction'
 
@@ -68,20 +68,18 @@ class GeneratorInterface(ABC):
         raise NotImplementedError('need to override method')
 
 
+# FP from pylint, this is semi-abstract class
+# pylint: disable=abstract-method
 class CppGenerator(GeneratorInterface):
     def __init__(self, schema, name):
-        super(GeneratorInterface, self).__init__()
+        super(CppGenerator, self).__init__()
         self.schema = schema
         self.code = []
         self.transaction_name = name
-        self.transaction_body_name = '{}Body'.format(name)
-        short_name = name[:-len(SUFFIX)]
-        self.builder_name = '{}Builder'.format(short_name)
-        self.written_name = join_lower(tokenize(short_name))
         self.replacements = {
             'TRANSACTION_NAME': self.transaction_name,
-            'BUILDER_NAME': self.builder_name,
-            'COMMENT_NAME': self.written_name
+            'BUILDER_NAME': self.builder_name(),
+            'COMMENT_NAME': self.written_name()
         }
 
         self.indent = 0
@@ -90,6 +88,15 @@ class CppGenerator(GeneratorInterface):
 
         self.hints = all_hints[self.transaction_name]
         self.prepend_copyright()
+
+    def transaction_body_name(self):
+        return '{}Body'.format(self.transaction_name)
+
+    def builder_name(self):
+        return '{}Builder'.format(self.transaction_name[:-len(SUFFIX)])
+
+    def written_name(self):
+        return join_lower(tokenize(self.transaction_name[:-len(SUFFIX)]))
 
     def prepend_copyright(self):
         if os.path.isfile('../HEADER.inc'):
@@ -119,11 +126,11 @@ class CppGenerator(GeneratorInterface):
 
         return namespace
 
-    def append(self, multiline_string, additional_replacements = {}):
+    def append(self, multiline_string, additional_replacements=None):
         for line in re.split(r'\n', multiline_string):
             # indent non-empty lines
             if line:
-                replacements = { **self.replacements, **additional_replacements }
+                replacements = {**self.replacements, **additional_replacements} if additional_replacements else self.replacements
                 self.code.append('\t' * self.indent + line.format(**replacements))
             else:
                 self.code.append('')
@@ -139,7 +146,8 @@ class CppGenerator(GeneratorInterface):
 
         if 'byte' == type_descriptor['type'] and type_descriptor['size'] <= 8:
             return qualified_typename
-        elif 'enum' == type_descriptor['type']:
+
+        if 'enum' == type_descriptor['type']:
             return qualified_typename
 
         return 'const {}&'.format(qualified_typename)
@@ -170,7 +178,7 @@ class CppGenerator(GeneratorInterface):
     # region internals
 
     def _foreach_builder_field(self, callback):
-        for field in self.schema[self.transaction_body_name]['layout']:
+        for field in self.schema[self.transaction_body_name()]['layout']:
             # for builder fields, skip Size or count fields, they are always used for variable data
             if field['name'].endswith('Size') or field['name'].endswith('Count'):
                 continue
@@ -183,9 +191,10 @@ class CppGenerator(GeneratorInterface):
         param_name = field['name']
         return 'set', param_type, param_name
 
-    def _get_buffer_setter_name_desc(self, field):
+    @staticmethod
+    def _get_buffer_setter_name_desc(field):
         """sample: void setMessage(const RawBuffer& message)"""
-        assert('byte' == field['type'])
+        assert 'byte' == field['type']
         param_type = 'const RawBuffer&'
         param_name = field['name']
         return 'set', param_type, param_name
@@ -211,7 +220,8 @@ class CppGenerator(GeneratorInterface):
 
         if field['size'].endswith('Size'):
             return FieldKind.BUFFER
-        elif field['size'].endswith('Count'):
+
+        if field['size'].endswith('Count'):
             return FieldKind.VECTOR
 
         return FieldKind.UNKNOWN

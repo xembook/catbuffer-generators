@@ -4,9 +4,6 @@ SUFFIX = 'Transaction'
 
 
 class ImplementationGenerator(CppGenerator):
-    def __init__(self, schema, name):
-        super(ImplementationGenerator, self).__init__(schema, name)
-
     def _add_includes(self):
         self.append('#include "{BUILDER_NAME}.h"')
         self.append('')
@@ -41,7 +38,7 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);""".format(NAME=param_
     def _generate_field(self, field_kind, field, builder_field_typename):
         pass
 
-    def _generate_build_variable_fields_size(self, field):
+    def _generate_build_variable_fields_size(self, variable_sizes, field):
         field_kind = CppGenerator._get_field_kind(field)
         formatted_vector_size = 'm_{NAME}.size()'.format(NAME=field['name'])
         if field_kind == FieldKind.BUFFER:
@@ -52,7 +49,7 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);""".format(NAME=param_
             self.append('size += {};'.format(formatted_size))
 
         if field_kind != FieldKind.SIMPLE:
-            self.variable_sizes[field['size']] = formatted_vector_size
+            variable_sizes[field['size']] = formatted_vector_size
 
     def _generate_build_variable_fields(self, field):
         field_kind = CppGenerator._get_field_kind(field)
@@ -84,7 +81,7 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);""".format(NAME=param_
 
     @staticmethod
     def byte_size_to_type_name(size):
-        return { 1: 'uint8_t', 2: 'uint16_t', 4: 'uint32_t', '8': 'uint64_t'}[size]
+        return {1: 'uint8_t', 2: 'uint16_t', 4: 'uint32_t', '8': 'uint64_t'}[size]
 
     def _generate_build(self):
         self.append('template<typename TransactionType>')
@@ -94,18 +91,18 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);""".format(NAME=param_
         self.append('// 1. allocate, zero (header), set model::Transaction fields')
         self.append('auto size = sizeof(TransactionType);')
         # go through variable data and add it to size, collect sizes
-        self.variable_sizes = {}
-        self._foreach_builder_field(self._generate_build_variable_fields_size)
+        variable_sizes = {}
+        self._foreach_builder_field(lambda field: self._generate_build_variable_fields_size(variable_sizes, field))
         self.append('auto pTransaction = createTransaction<TransactionType>(size);')
         self.append('')
 
         self.append('// 2. set transaction fields and sizes')
 
         # set non-variadic fields
-        for field in self.schema[self.transaction_body_name]['layout']:
+        for field in self.schema[self.transaction_body_name()]['layout']:
             template = {'NAME': field['name'], 'TX_FIELD_NAME': capitalize(field['name'])}
             if field['name'].endswith('Size') or field['name'].endswith('Count'):
-                size = self.variable_sizes[field['name']]
+                size = variable_sizes[field['name']]
                 size_type = ImplementationGenerator.byte_size_to_type_name(field['size'])
                 format_string = 'pTransaction->{TX_FIELD_NAME} = utils::checked_cast<size_t, {SIZE_TYPE}>({SIZE});'
                 self.append(format_string.format(**template, SIZE_TYPE=size_type, SIZE=size))
