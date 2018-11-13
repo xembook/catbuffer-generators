@@ -6,11 +6,11 @@ from .CppGenerator import CppGenerator, FieldKind, uncapitalize
 
 class HeaderGenerator(CppGenerator):
     def _add_includes(self):
-        self.append("""#pragma once
+        self.append('''#pragma once
 #include "TransactionBuilder.h"
 #include "plugins/txes/{PLUGIN}/src/model/{{TRANSACTION_NAME}}.h"
 #include <vector>
-""".format(PLUGIN=self.hints['plugin']))
+'''.format(PLUGIN=self.hints['plugin']))
 
     def _class_header(self):
         self.append('/// Builder for a {COMMENT_NAME} transaction.')
@@ -49,19 +49,19 @@ class HeaderGenerator(CppGenerator):
     def _builds(self):
         self.append('public:')
         self.indent += 1
-        self.append("""/// Builds a new {COMMENT_NAME} transaction.
+        self.append('''/// Builds a new {COMMENT_NAME} transaction.
 std::unique_ptr<Transaction> build() const;
 
 /// Builds a new embedded {COMMENT_NAME} transaction.
 std::unique_ptr<EmbeddedTransaction> buildEmbedded() const;
-""")
+''')
         self.indent -= 1
 
         self.append('private:')
         self.indent += 1
-        self.append("""template<typename TTransaction>
+        self.append('''template<typename TTransaction>
 std::unique_ptr<TTransaction> buildImpl() const;
-""")
+''')
         self.indent -= 1
 
     def _generate_field(self, field_kind, field, builder_field_typename):

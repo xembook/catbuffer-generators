@@ -22,14 +22,14 @@ class ImplementationGenerator(CppGenerator):
         if field_kind == FieldKind.SIMPLE:
             self.append('m_{NAME} = {NAME};'.format(NAME=param_name))
         elif field_kind == FieldKind.BUFFER:
-            self.append("""if (0 == {NAME}.Size)
+            self.append('''if (0 == {NAME}.Size)
 \tCATAPULT_THROW_INVALID_ARGUMENT("argument cannot be empty");
 
 if (!m_{NAME}.empty())
 \tCATAPULT_THROW_RUNTIME_ERROR("field already set");
 
 m_{NAME}.resize({NAME}.Size);
-m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);""".format(NAME=param_name))
+m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);'''.format(NAME=param_name))
         else:
             self.append('m_{FIELD}.push_back({PARAM});'.format(FIELD=field['name'], PARAM=param_name))
         self.indent -= 1
@@ -125,14 +125,14 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);""".format(NAME=param_
         self.append('}}')
 
     def _builds(self):
-        self.append("""std::unique_ptr<{BUILDER_NAME}::Transaction> {BUILDER_NAME}::build() const {{
+        self.append('''std::unique_ptr<{BUILDER_NAME}::Transaction> {BUILDER_NAME}::build() const {{
 \treturn buildImpl<Transaction>();
 }}
 
 std::unique_ptr<{BUILDER_NAME}::EmbeddedTransaction> {BUILDER_NAME}::buildEmbedded() const {{
 \treturn buildImpl<EmbeddedTransaction>();
 }}
-""")
+''')
         self._generate_build()
 
     def _class_footer(self):

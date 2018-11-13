@@ -33,10 +33,10 @@ def capitalize(string):
 
 
 def singularize(string):
-    if string.endswith("es"):
+    if string.endswith('es'):
         return string[:-2]
 
-    if string.endswith("s"):
+    if string.endswith('s'):
         return string[:-1]
 
     return string
