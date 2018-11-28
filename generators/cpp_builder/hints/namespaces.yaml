@@ -1,0 +1,5 @@
+# some transactions use types that need to be namespace-qualified in c++ builders
+
+TransferTransaction:
+  Mosaic: model
+  UnresolvedMosaic: model

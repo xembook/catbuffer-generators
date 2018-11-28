@@ -1,9 +1,9 @@
 # pylint: disable=too-few-public-methods
 from abc import ABC, abstractmethod
 from enum import Enum
-import json
 import os
 import re
+import yaml
 
 SUFFIX = 'Transaction'
 
@@ -83,11 +83,22 @@ class CppGenerator(GeneratorInterface):
         }
 
         self.indent = 0
-        with open('schemas/hints.json') as input_file:
-            all_hints = json.load(input_file)
-
-        self.hints = all_hints[self.transaction_name]
+        self.hints = CppGenerator._load_hints(['namespaces', 'plugin'])[self.transaction_name]
         self.prepend_copyright()
+
+    @staticmethod
+    def _load_hints(filenames):
+        all_hints = {}
+        for filename in filenames:
+            with open('generators/cpp_builder/hints/{0}.yaml'.format(filename)) as input_file:
+                hints = yaml.load(input_file)
+                for hint_key in hints:
+                    if hint_key not in all_hints:
+                        all_hints[hint_key] = {}
+
+                    all_hints[hint_key][filename] = hints.get(hint_key)
+
+        return all_hints
 
     def transaction_body_name(self):
         return '{}Body'.format(self.transaction_name)

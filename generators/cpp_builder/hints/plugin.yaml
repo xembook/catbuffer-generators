@@ -1,0 +1,7 @@
+# transaction plugin name needs to be known in order to produce correct include paths in c++ builders
+
+AccountLinkTransaction: accountlink
+HashLockTransaction: lock_hash
+TransferTransaction: transfer
+SecretLockTransaction: lock_secret
+SecretProofTransaction: lock_proof
