@@ -1,0 +1,6 @@
+# rewrite transaction field access
+
+MosaicDefinitionTransaction:
+  Flags: PropertiesHeader.Flags
+  Divisibility: PropertiesHeader.Divisibility
+  PropertiesCount: PropertiesHeader.Count

@@ -27,13 +27,20 @@ class HeaderGenerator(CppGenerator):
         self.append('')
         self.indent -= 1
 
+    @staticmethod
+    def _format_bound(field):
+        return ' and {} to `{}`'.format(field['condition'], field['condition_value'])
+
     def _add_comment(self, field_kind, field, param_name):
         comments = {
-            FieldKind.SIMPLE: 'Sets the {COMMENT} field to \\a {NAME}.',
+            FieldKind.SIMPLE: 'Sets the {COMMENT} field to \\a {NAME}{BOUND}.',
             FieldKind.BUFFER: 'Sets the {COMMENT} field to \\a {NAME}.',
             FieldKind.VECTOR: 'Adds \\a {NAME} to {COMMENT}.'
         }
-        self.append('/// ' + comments[field_kind].format(COMMENT=field['comments'], NAME=param_name))
+        bound_msg = ''
+        if 'condition' in field:
+            bound_msg = HeaderGenerator._format_bound(field)
+        self.append('/// ' + comments[field_kind].format(COMMENT=field['comments'], NAME=param_name, BOUND=bound_msg))
 
     def _generate_setter(self, field_kind, field, full_setter_name, param_name):
         self._add_comment(field_kind, field, param_name)

@@ -33,6 +33,9 @@ def capitalize(string):
 
 
 def singularize(string):
+    if string.endswith('ies'):
+        return string[:-3] + 'y'
+
     if string.endswith('es'):
         return string[:-2]
 
@@ -83,7 +86,7 @@ class CppGenerator(GeneratorInterface):
         }
 
         self.indent = 0
-        self.hints = CppGenerator._load_hints(['namespaces', 'plugin'])[self.transaction_name]
+        self.hints = CppGenerator._load_hints(['namespaces', 'plugin', 'rewrites', 'setters'])[self.transaction_name]
         self.prepend_copyright()
 
     @staticmethod
@@ -150,7 +153,20 @@ class CppGenerator(GeneratorInterface):
         namespace = self._get_namespace(typename)
         return namespace + typename
 
-    def param_type(self, typename):
+    @staticmethod
+    def _is_builtin_type(typename, size):
+        # uint8_t up to uint64_t are passed as 'byte' with size set to proper value
+        return 'byte' == typename and size < 8
+
+    @staticmethod
+    def _builtin_type(size):
+        types = {1: 'uint8_t', 2: 'uint16_t', 4: 'uint32_t', 8: 'uint64_t'}
+        return types[size]
+
+    def param_type(self, typename, size):
+        if not isinstance(size, str) and size > 0 and self._is_builtin_type(typename, size):
+            return self._builtin_type(size)
+
         # if type is simple pass by value, otherwise pass by reference
         type_descriptor = self.schema[typename]
         qualified_typename = self.qualified_type(typename)
@@ -163,9 +179,17 @@ class CppGenerator(GeneratorInterface):
 
         return 'const {}&'.format(qualified_typename)
 
+    def _get_schema_field(self, field_name):
+        return next(field for field in self.schema[self.transaction_body_name()]['layout'] if field['name'] == field_name)
+
     @staticmethod
-    def method_name(prefix, typename, param_name):
-        return '{}{}({} {})'.format(prefix, capitalize(param_name), typename, uncapitalize(param_name))
+    def method_name(prefix, param_name):
+        return '{PREFIX}{CAPITALIZED_PARAM_NAME}'.format(PREFIX=prefix, CAPITALIZED_PARAM_NAME=capitalize(param_name))
+
+    @staticmethod
+    def full_method_name(prefix, typename, param_name):
+        method_name = CppGenerator.method_name(prefix, param_name)
+        return '{METHOD_NAME}({TYPE_NAME} {PARAM_NAME})'.format(METHOD_NAME=method_name, TYPE_NAME=typename, PARAM_NAME=param_name)
 
     # endregion
 
@@ -198,7 +222,7 @@ class CppGenerator(GeneratorInterface):
 
     def _get_simple_setter_name_desc(self, field):
         """sample: void setRemoteAccountKey(const Key& remoteAccountKey)"""
-        param_type = self.param_type(field['type'])
+        param_type = self.param_type(field['type'], field.get('size', 0))
         param_name = field['name']
         return 'set', param_type, param_name
 
@@ -212,7 +236,7 @@ class CppGenerator(GeneratorInterface):
 
     def _get_vector_setter_name_desc(self, field):
         """sample: void addMosaic(const Mosaic& mosaic)"""
-        param_type = self.param_type(field['type'])
+        param_type = self.param_type(field['type'], field.get('size', 0))
         param_name = singularize(field['name'])
         return 'add', param_type, param_name
 
@@ -229,6 +253,10 @@ class CppGenerator(GeneratorInterface):
         if 'size' not in field:
             return FieldKind.SIMPLE
 
+        # if raw uint type treat as SIMPLE (uint8_t - uint64_t)
+        if not isinstance(field['size'], str) and 'byte' == field['type'] and field['size'] <= 8:
+            return FieldKind.SIMPLE
+
         if field['size'].endswith('Size'):
             return FieldKind.BUFFER
 
@@ -238,14 +266,22 @@ class CppGenerator(GeneratorInterface):
         return FieldKind.UNKNOWN
 
     def _generate_setter_proxy(self, field):
+        suppress_setter = self.hints['setters'].get(field['name'], '') if 'setters' in self.hints else ''
+        if suppress_setter:
+            return
+
         field_kind = CppGenerator._get_field_kind(field)
         prefix, param_type, param_name = self._get_setter_name_desc(field_kind, field)
-        full_setter_name = CppGenerator.method_name(prefix, param_type, param_name)
+        full_setter_name = CppGenerator.full_method_name(prefix, param_type, param_name)
         self._generate_setter(field_kind, field, full_setter_name, param_name)
 
     def _generate_field_proxy(self, field):
         field_kind = CppGenerator._get_field_kind(field)
-        qualified_typename = self.qualified_type(field['type'])
+        field_type = field['type']
+        if 'size' in field and not isinstance(field['size'], str) and self._is_builtin_type(field['type'], field['size']):
+            field_type = self._builtin_type(field['size'])
+
+        qualified_typename = self.qualified_type(field_type)
         types = {
             FieldKind.SIMPLE: '{TYPE}',
             FieldKind.BUFFER: 'std::vector<uint8_t>',

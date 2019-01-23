@@ -1,0 +1,6 @@
+# 1. suppress generation of setters for field listed in cats file
+# 2. when setting the field in builder replace with specified formula
+# note, currently only fields with kind SIMPLE are supported
+
+MosaicDefinitionTransaction:
+  mosaicId: model::GenerateMosaicId(signer(), m_nonce)

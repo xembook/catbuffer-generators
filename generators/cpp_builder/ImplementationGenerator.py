@@ -16,11 +16,21 @@ class ImplementationGenerator(CppGenerator):
         self.append('{{}}')
         self.append('')
 
+    def _generate_call_to_setter_for_bound_field(self, condition_field_name, condition_value):
+        field = self._get_schema_field(condition_field_name)
+        field_kind = CppGenerator._get_field_kind(field)
+        prefix, param_type, param_name = self._get_setter_name_desc(field_kind, field)
+        method_name = CppGenerator.method_name(prefix, param_name)
+        return '{METHOD_NAME}({TYPE_NAME}::{VALUE})'.format(METHOD_NAME=method_name, TYPE_NAME=param_type, VALUE=condition_value)
+
     def _generate_setter(self, field_kind, field, full_setter_name, param_name):
         self.append('void {BUILDER_NAME}::' + full_setter_name + ' {{')
         self.indent += 1
         if field_kind == FieldKind.SIMPLE:
             self.append('m_{NAME} = {NAME};'.format(NAME=param_name))
+            if 'condition' in field:
+                call_line = self._generate_call_to_setter_for_bound_field(field['condition'], field['condition_value'])
+                self.append(call_line)
         elif field_kind == FieldKind.BUFFER:
             self.append('''if (0 == {NAME}.Size)
 \tCATAPULT_THROW_INVALID_ARGUMENT("argument `{NAME}` cannot be empty");
@@ -59,12 +69,17 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);'''.format(NAME=param_
         if field_kind != FieldKind.SIMPLE:
             variable_sizes[field['size']] = formatted_vector_size
 
+    def _generate_transaction_field_name(self, name):
+        field_name = capitalize(name)
+        rewritten = self.hints['rewrites'].get(field_name, '') if 'rewrites' in self.hints else ''
+        return rewritten or field_name
+
     def _generate_build_variable_fields(self, field):
         field_kind = CppGenerator._get_field_kind(field)
         if field_kind == FieldKind.SIMPLE:
             return
 
-        template = {'NAME': field['name'], 'TX_FIELD_NAME': capitalize(field['name'])}
+        template = {'NAME': field['name'], 'TX_FIELD_NAME': self._generate_transaction_field_name(field['name'])}
         if field_kind == FieldKind.BUFFER:
             self.append('if (!m_{NAME}.empty())'.format(**template))
             self.indent += 1
@@ -91,6 +106,12 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);'''.format(NAME=param_
     def byte_size_to_type_name(size):
         return {1: 'uint8_t', 2: 'uint16_t', 4: 'uint32_t', '8': 'uint64_t'}[size]
 
+    def _generate_condition(self, condition_field_name, condition_value):
+        field = self._get_schema_field(condition_field_name)
+        field_kind = CppGenerator._get_field_kind(field)
+        _, param_type, _ = self._get_setter_name_desc(field_kind, field)
+        return 'if ({TYPE_NAME}::{VALUE} == {NAME})'.format(TYPE_NAME=param_type, VALUE=condition_value, NAME=field['name'])
+
     def _generate_build(self):
         self.append('template<typename TransactionType>')
         self.append('std::unique_ptr<TransactionType> {BUILDER_NAME}::buildImpl() const {{')
@@ -108,7 +129,7 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);'''.format(NAME=param_
 
         # set non-variadic fields
         for field in self.schema[self.transaction_body_name()]['layout']:
-            template = {'NAME': field['name'], 'TX_FIELD_NAME': capitalize(field['name'])}
+            template = {'NAME': field['name'], 'TX_FIELD_NAME': self._generate_transaction_field_name(field['name'])}
             if field['name'].endswith('Size') or field['name'].endswith('Count'):
                 size = variable_sizes[field['name']]
                 size_type = ImplementationGenerator.byte_size_to_type_name(field['size'])
@@ -117,7 +138,22 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);'''.format(NAME=param_
             else:
                 field_kind = CppGenerator._get_field_kind(field)
                 if field_kind == FieldKind.SIMPLE:
-                    self.append('pTransaction->{TX_FIELD_NAME} = m_{NAME};'.format(**template))
+                    if 'condition' in field:
+                        condition = self._generate_condition(field['condition'], field['condition_value'])
+                        self.append(condition)
+                        self.indent += 1
+
+                    # if setter has been suppressed, fill in with what is defined in setters.yaml hint file
+                    setter = self.hints['setters'].get(field['name'], '') if 'setters' in self.hints else ''
+                    if setter:
+                        self.append('pTransaction->{TX_FIELD_NAME} = {SETTER};'.format(**template, SETTER=setter))
+                    else:
+                        self.append('pTransaction->{TX_FIELD_NAME} = m_{NAME};'.format(**template))
+
+                    if 'condition' in field:
+                        self.indent -= 1
+                        self.append('')
+
                 # variadic fields are defined at the end of schema,
                 # so break if loop reached any of them
                 else:
