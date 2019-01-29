@@ -6,8 +6,9 @@ from .ImplementationGenerator import ImplementationGenerator
 
 class BuilderGenerator:
     """Cpp transaction builder generator, creates both header and implementation file"""
-    def __init__(self, schema):
+    def __init__(self, schema, options):
         self.schema = schema
+        self.options = options
         self.current = None
         self.generated_header = False
         self.current_name = None
@@ -31,12 +32,12 @@ class BuilderGenerator:
         """Returns Descriptor with desired filename and generated file content"""
         if not self.generated_header:
             self.current_name = self._iterate_until_next_transaction()
-            generator = HeaderGenerator(self.schema, self.current_name)
+            generator = HeaderGenerator(self.schema, self.options, self.current_name)
             code = generator.generate()
             self.generated_header = True
             return Descriptor('{}.h'.format(generator.builder_name()), code)
 
-        generator = ImplementationGenerator(self.schema, self.current_name)
+        generator = ImplementationGenerator(self.schema, self.options, self.current_name)
         code = generator.generate()
         self.generated_header = False
         return Descriptor('{}.cpp'.format(generator.builder_name()), code)

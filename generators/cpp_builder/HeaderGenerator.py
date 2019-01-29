@@ -8,12 +8,15 @@ class HeaderGenerator(CppGenerator):
     def _add_includes(self):
         self.append('''#pragma once
 #include "TransactionBuilder.h"
-#include "plugins/txes/{PLUGIN}/src/model/{{TRANSACTION_NAME}}.h"
-#include <vector>
-'''.format(PLUGIN=self.hints['plugin']))
+#include "plugins/txes/{PLUGIN}/src/model/{{TRANSACTION_NAME}}.h"'''.format(PLUGIN=self.hints['plugin']))
+
+        if self._contains_any_field_kind(FieldKind.VECTOR):
+            self.append('#include <vector>')
+
+        self.append('')
 
     def _class_header(self):
-        self.append('/// Builder for a {COMMENT_NAME} transaction.')
+        self.append('/// Builder for {COMMENT_NAME_A_OR_AN} {COMMENT_NAME} transaction.')
         self.append('class {BUILDER_NAME} : public TransactionBuilder {{')
         self.append('public:')
 
@@ -21,10 +24,17 @@ class HeaderGenerator(CppGenerator):
         self.append('using Transaction = model::{TRANSACTION_NAME};')
         self.append('using EmbeddedTransaction = model::Embedded{TRANSACTION_NAME};')
         self.append('')
-        self.append('/// Creates a {COMMENT_NAME} builder for building a {COMMENT_NAME} transaction from \\a signer')
-        self.append('/// for network specified by \\a networkIdentifier.')
+
+        self.indent -= 1
+        self.append('public:')
+
+        self.indent += 1
+        self.append('/// Creates {COMMENT_NAME_A_OR_AN} {COMMENT_NAME} builder for building'
+                    + ' {COMMENT_NAME_A_OR_AN} {COMMENT_NAME} transaction from \\a signer')
+        self.append('/// for the network specified by \\a networkIdentifier.')
         self.append('{BUILDER_NAME}(model::NetworkIdentifier networkIdentifier, const Key& signer);')
         self.append('')
+
         self.indent -= 1
 
     @staticmethod
@@ -33,8 +43,8 @@ class HeaderGenerator(CppGenerator):
 
     def _add_comment(self, field_kind, field, param_name):
         comments = {
-            FieldKind.SIMPLE: 'Sets the {COMMENT} field to \\a {NAME}{BOUND}.',
-            FieldKind.BUFFER: 'Sets the {COMMENT} field to \\a {NAME}.',
+            FieldKind.SIMPLE: 'Sets the {COMMENT} to \\a {NAME}{BOUND}.',
+            FieldKind.BUFFER: 'Sets the {COMMENT} to \\a {NAME}.',
             FieldKind.VECTOR: 'Adds \\a {NAME} to {COMMENT}.'
         }
         bound_msg = ''

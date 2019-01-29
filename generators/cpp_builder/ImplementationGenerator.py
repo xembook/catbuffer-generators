@@ -6,12 +6,18 @@ SUFFIX = 'Transaction'
 class ImplementationGenerator(CppGenerator):
     def _add_includes(self):
         self.append('#include "{BUILDER_NAME}.h"')
+
+        if 'includes' in self.hints:
+            for include in self.hints['includes']:
+                self.append('#include "{0}"'.format(include))
+
         self.append('')
 
     def _class_header(self):
         self.append('{BUILDER_NAME}::{BUILDER_NAME}(model::NetworkIdentifier networkIdentifier, const Key& signer)')
         self.indent += 2
         self.append(': TransactionBuilder(networkIdentifier, signer)')
+        self._foreach_builder_field(self._generate_field_initializer_list_entry)
         self.indent -= 2
         self.append('{{}}')
         self.append('')
@@ -19,9 +25,8 @@ class ImplementationGenerator(CppGenerator):
     def _generate_call_to_setter_for_bound_field(self, condition_field_name, condition_value):
         field = self._get_schema_field(condition_field_name)
         field_kind = CppGenerator._get_field_kind(field)
-        prefix, param_type, param_name = self._get_setter_name_desc(field_kind, field)
-        method_name = CppGenerator.method_name(prefix, param_name)
-        return '{METHOD_NAME}({TYPE_NAME}::{VALUE})'.format(METHOD_NAME=method_name, TYPE_NAME=param_type, VALUE=condition_value)
+        _, param_type, param_name = self._get_setter_name_desc(field_kind, field)
+        return 'm_{NAME} = {TYPE_NAME}::{VALUE};'.format(NAME=param_name, TYPE_NAME=param_type, VALUE=condition_value)
 
     def _generate_setter(self, field_kind, field, full_setter_name, param_name):
         self.append('void {BUILDER_NAME}::' + full_setter_name + ' {{')
@@ -29,7 +34,7 @@ class ImplementationGenerator(CppGenerator):
         if field_kind == FieldKind.SIMPLE:
             self.append('m_{NAME} = {NAME};'.format(NAME=param_name))
             if 'condition' in field:
-                call_line = self._generate_call_to_setter_for_bound_field(field['condition'], field['condition_value'])
+                call_line = self._generate_call_to_setter_for_bound_field(field['condition'], capitalize(field['condition_value']))
                 self.append(call_line)
         elif field_kind == FieldKind.BUFFER:
             self.append('''if (0 == {NAME}.Size)
@@ -56,6 +61,9 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);'''.format(NAME=param_
     def _generate_field(self, field_kind, field, builder_field_typename):
         pass
 
+    def _generate_field_initializer_list_entry(self, field):
+        self.append(', m_{NAME}()'.format(NAME=field['name']))
+
     def _generate_build_variable_fields_size(self, variable_sizes, field):
         field_kind = CppGenerator._get_field_kind(field)
         formatted_vector_size = 'm_{NAME}.size()'.format(NAME=field['name'])
@@ -80,27 +88,8 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);'''.format(NAME=param_
             return
 
         template = {'NAME': field['name'], 'TX_FIELD_NAME': self._generate_transaction_field_name(field['name'])}
-        if field_kind == FieldKind.BUFFER:
-            self.append('if (!m_{NAME}.empty())'.format(**template))
-            self.indent += 1
+        if field_kind in (FieldKind.BUFFER, FieldKind.VECTOR):
             self.append('std::copy(m_{NAME}.cbegin(), m_{NAME}.cend(), pTransaction->{TX_FIELD_NAME}Ptr());'.format(**template))
-            self.indent -= 1
-            self.append('')
-        elif field_kind == FieldKind.VECTOR:
-            self.append('if (!m_{NAME}.empty()) {{{{'.format(NAME=field['name']))
-            self.indent += 1
-
-            self.append('auto* pElement = pTransaction->{TX_FIELD_NAME}Ptr();'.format(**template))
-            self.append('for (const auto& element : m_{NAME}) {{{{'.format(**template))
-            self.indent += 1
-
-            self.append('*pElement = element;')
-            self.append('++pElement;')
-
-            self.indent -= 1
-            self.append('}}')
-            self.indent -= 1
-            self.append('}}')
 
     @staticmethod
     def byte_size_to_type_name(size):
@@ -110,7 +99,7 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);'''.format(NAME=param_
         field = self._get_schema_field(condition_field_name)
         field_kind = CppGenerator._get_field_kind(field)
         _, param_type, _ = self._get_setter_name_desc(field_kind, field)
-        return 'if ({TYPE_NAME}::{VALUE} == {NAME})'.format(TYPE_NAME=param_type, VALUE=condition_value, NAME=field['name'])
+        return 'if ({TYPE_NAME}::{VALUE} == m_{NAME})'.format(TYPE_NAME=param_type, VALUE=capitalize(condition_value), NAME=field['name'])
 
     def _generate_build(self):
         self.append('template<typename TransactionType>')
@@ -119,6 +108,7 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);'''.format(NAME=param_
 
         self.append('// 1. allocate, zero (header), set model::Transaction fields')
         self.append('auto size = sizeof(TransactionType);')
+
         # go through variable data and add it to size, collect sizes
         variable_sizes = {}
         self._foreach_builder_field(lambda field: self._generate_build_variable_fields_size(variable_sizes, field))
@@ -158,12 +148,17 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);'''.format(NAME=param_
                 # so break if loop reached any of them
                 else:
                     break
-        self.append('')
-
-        self.append('// 3. set transaction attachments')
-        self._foreach_builder_field(self._generate_build_variable_fields)
 
         self.append('')
+
+        if self._contains_any_other_field_kind(FieldKind.SIMPLE):
+            self.append('// 3. set transaction attachments')
+            self._foreach_builder_field(self._generate_build_variable_fields)
+
+            # variable fields that expand to conditional statement will append a blank line, so, if one is present, don't add another
+            if '' != self.code[-1]:
+                self.append('')
+
         self.append('return pTransaction;')
         self.indent -= 1
         self.append('}}')

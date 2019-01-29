@@ -1,5 +1,50 @@
 # some transactions use types that need to be namespace-qualified in c++ builders
 
+AliasAddressTransaction:
+  AliasAction: model
+
+AliasMosaicTransaction:
+  AliasAction: model
+
+AccountLinkTransaction:
+  AccountLinkAction: model
+
+HashLockTransaction:
+  UnresolvedMosaic: model
+
+MosaicDefinitionTransaction:
+  MosaicFlags: model
+  MosaicProperty: model
+
+MosaicSupplyChangeTransaction:
+  MosaicSupplyChangeDirection: model
+
+ModifyMultisigAccountTransaction:
+  CosignatoryModification: model
+
+SecretLockTransaction:
+  LockHashAlgorithm: model
+  UnresolvedMosaic: model
+
+SecretProofTransaction:
+  LockHashAlgorithm: model
+
 TransferTransaction:
   Mosaic: model
   UnresolvedMosaic: model
+
+RegisterNamespaceTransaction:
+  NamespaceType: model
+
+AddressPropertyTransaction:
+  PropertyType: model
+  AddressPropertyModification: model
+
+MosaicPropertyTransaction:
+  PropertyType: model
+  MosaicPropertyModification: model
+
+TransactionTypePropertyTransaction:
+  PropertyType: model
+  TransactionTypePropertyModification: model
+

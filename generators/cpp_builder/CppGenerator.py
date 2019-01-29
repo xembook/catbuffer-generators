@@ -74,7 +74,7 @@ class GeneratorInterface(ABC):
 # FP from pylint, this is semi-abstract class
 # pylint: disable=abstract-method
 class CppGenerator(GeneratorInterface):
-    def __init__(self, schema, name):
+    def __init__(self, schema, options, name):
         super(CppGenerator, self).__init__()
         self.schema = schema
         self.code = []
@@ -82,12 +82,13 @@ class CppGenerator(GeneratorInterface):
         self.replacements = {
             'TRANSACTION_NAME': self.transaction_name,
             'BUILDER_NAME': self.builder_name(),
-            'COMMENT_NAME': self.written_name()
+            'COMMENT_NAME': self.written_name(),
+            'COMMENT_NAME_A_OR_AN': 'an' if self.written_name().startswith(('a', 'e', 'i', 'o', 'u')) else 'a'
         }
 
         self.indent = 0
-        self.hints = CppGenerator._load_hints(['namespaces', 'plugin', 'rewrites', 'setters'])[self.transaction_name]
-        self.prepend_copyright()
+        self.hints = CppGenerator._load_hints(['includes', 'namespaces', 'plugin', 'rewrites', 'setters'])[self.transaction_name]
+        self.prepend_copyright(options['copyright'])
 
     @staticmethod
     def _load_hints(filenames):
@@ -112,9 +113,9 @@ class CppGenerator(GeneratorInterface):
     def written_name(self):
         return join_lower(tokenize(self.transaction_name[:-len(SUFFIX)]))
 
-    def prepend_copyright(self):
-        if os.path.isfile('../HEADER.inc'):
-            with open('../HEADER.inc') as header:
+    def prepend_copyright(self, copyright_file):
+        if os.path.isfile(copyright_file):
+            with open(copyright_file) as header:
                 self.code = [line.strip() for line in header]
 
     def generate(self):
@@ -159,13 +160,14 @@ class CppGenerator(GeneratorInterface):
         return 'byte' == typename and size < 8
 
     @staticmethod
-    def _builtin_type(size):
-        types = {1: 'uint8_t', 2: 'uint16_t', 4: 'uint32_t', 8: 'uint64_t'}
-        return types[size]
+    def _builtin_type(size, signedness):
+        builtin_types = {1: 'int8_t', 2: 'int16_t', 4: 'int32_t', 8: 'int64_t'}
+        builtin_type = builtin_types[size]
+        return builtin_type if signedness == 'signed' else 'u' + builtin_type
 
-    def param_type(self, typename, size):
+    def param_type(self, typename, size, signedness):
         if not isinstance(size, str) and size > 0 and self._is_builtin_type(typename, size):
-            return self._builtin_type(size)
+            return self._builtin_type(size, signedness)
 
         # if type is simple pass by value, otherwise pass by reference
         type_descriptor = self.schema[typename]
@@ -222,7 +224,7 @@ class CppGenerator(GeneratorInterface):
 
     def _get_simple_setter_name_desc(self, field):
         """sample: void setRemoteAccountKey(const Key& remoteAccountKey)"""
-        param_type = self.param_type(field['type'], field.get('size', 0))
+        param_type = self.param_type(field['type'], field.get('size', 0), field.get('signedness', ''))
         param_name = field['name']
         return 'set', param_type, param_name
 
@@ -236,7 +238,7 @@ class CppGenerator(GeneratorInterface):
 
     def _get_vector_setter_name_desc(self, field):
         """sample: void addMosaic(const Mosaic& mosaic)"""
-        param_type = self.param_type(field['type'], field.get('size', 0))
+        param_type = self.param_type(field['type'], field.get('size', 0), field.get('signedness', ''))
         param_name = singularize(field['name'])
         return 'add', param_type, param_name
 
@@ -265,6 +267,20 @@ class CppGenerator(GeneratorInterface):
 
         return FieldKind.UNKNOWN
 
+    def _contains_any_field_kind(self, field_kind):
+        for field in self.schema[self.transaction_body_name()]['layout']:
+            if field_kind == CppGenerator._get_field_kind(field):
+                return True
+
+        return False
+
+    def _contains_any_other_field_kind(self, field_kind):
+        for field in self.schema[self.transaction_body_name()]['layout']:
+            if field_kind != CppGenerator._get_field_kind(field):
+                return True
+
+        return False
+
     def _generate_setter_proxy(self, field):
         suppress_setter = self.hints['setters'].get(field['name'], '') if 'setters' in self.hints else ''
         if suppress_setter:
@@ -279,7 +295,7 @@ class CppGenerator(GeneratorInterface):
         field_kind = CppGenerator._get_field_kind(field)
         field_type = field['type']
         if 'size' in field and not isinstance(field['size'], str) and self._is_builtin_type(field['type'], field['size']):
-            field_type = self._builtin_type(field['size'])
+            field_type = self._builtin_type(field['size'], field['signedness'])
 
         qualified_typename = self.qualified_type(field_type)
         types = {

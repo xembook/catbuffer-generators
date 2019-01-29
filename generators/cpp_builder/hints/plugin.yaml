@@ -1,14 +1,25 @@
 # transaction plugin name needs to be known in order to produce correct include paths in c++ builders
 
 AccountLinkTransaction: accountlink
+
 AggregateTransaction: aggregate
+
 HashLockTransaction: lock_hash
+
 TransferTransaction: transfer
+
 SecretLockTransaction: lock_secret
-SecretProofTransaction: lock_proof
+SecretProofTransaction: lock_secret
+
 MosaicDefinitionTransaction: mosaic
 MosaicSupplyChangeTransaction: mosaic
+
 ModifyMultisigAccountTransaction: multisig
+
 AliasAddressTransaction: namespace
 AliasMosaicTransaction: namespace
 RegisterNamespaceTransaction: namespace
+
+AddressPropertyTransaction: property
+MosaicPropertyTransaction: property
+TransactionTypePropertyTransaction: property
