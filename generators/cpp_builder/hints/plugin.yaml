@@ -16,8 +16,8 @@ MosaicSupplyChangeTransaction: mosaic
 
 ModifyMultisigAccountTransaction: multisig
 
-AliasAddressTransaction: namespace
-AliasMosaicTransaction: namespace
+AddressAliasTransaction: namespace
+MosaicAliasTransaction: namespace
 RegisterNamespaceTransaction: namespace
 
 AddressPropertyTransaction: property

@@ -1,9 +1,9 @@
 # some transactions use types that need to be namespace-qualified in c++ builders
 
-AliasAddressTransaction:
+AddressAliasTransaction:
   AliasAction: model
 
-AliasMosaicTransaction:
+MosaicAliasTransaction:
   AliasAction: model
 
 AccountLinkTransaction:
