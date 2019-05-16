@@ -2,7 +2,8 @@
 
 AccountLinkTransaction: account_link
 
-AggregateTransaction: aggregate
+AggregateCompleteTransaction: aggregate
+AggregateBondedTransaction: aggregate
 
 HashLockTransaction: lock_hash
 
