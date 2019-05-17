@@ -1,6 +1,6 @@
 # transaction plugin name needs to be known in order to produce correct include paths in c++ builders
 
-AccountLinkTransaction: accountlink
+AccountLinkTransaction: account_link
 
 AggregateTransaction: aggregate
 
