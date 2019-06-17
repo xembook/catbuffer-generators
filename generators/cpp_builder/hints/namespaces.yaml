@@ -36,15 +36,15 @@ TransferTransaction:
 RegisterNamespaceTransaction:
   NamespaceType: model
 
-AddressPropertyTransaction:
-  PropertyType: model
-  AddressPropertyModification: model
+AccountAddressRestrictionTransaction:
+  AccountRestrictionType: model
+  AccountAddressRestrictionModification: model
 
-MosaicPropertyTransaction:
-  PropertyType: model
-  MosaicPropertyModification: model
+AccountMosaicRestrictionTransaction:
+  AccountRestrictionType: model
+  AccountMosaicRestrictionModification: model
 
-TransactionTypePropertyTransaction:
-  PropertyType: model
-  TransactionTypePropertyModification: model
+AccountOperationRestrictionTransaction:
+  AccountRestrictionType: model
+  AccountOperationRestrictionModification: model
 

@@ -21,6 +21,6 @@ AddressAliasTransaction: namespace
 MosaicAliasTransaction: namespace
 RegisterNamespaceTransaction: namespace
 
-AddressPropertyTransaction: property
-MosaicPropertyTransaction: property
-TransactionTypePropertyTransaction: property
+AccountAddressRestrictionTransaction: restriction_account
+AccountMosaicRestrictionTransaction: restriction_account
+AccountOperationRestrictionTransaction: restriction_account
