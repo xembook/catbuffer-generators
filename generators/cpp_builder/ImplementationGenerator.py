@@ -101,18 +101,13 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);'''.format(NAME=param_
         _, param_type, _ = self._get_setter_name_desc(field_kind, field)
         return 'if ({TYPE_NAME}::{VALUE} == m_{NAME})'.format(TYPE_NAME=param_type, VALUE=capitalize(condition_value), NAME=field['name'])
 
-    def _generate_build(self):
+    def _generate_build(self, variable_sizes):
         self.append('template<typename TransactionType>')
         self.append('std::unique_ptr<TransactionType> {BUILDER_NAME}::buildImpl() const {{')
         self.indent += 1
 
         self.append('// 1. allocate, zero (header), set model::Transaction fields')
-        self.append('auto size = sizeof(TransactionType);')
-
-        # go through variable data and add it to size, collect sizes
-        variable_sizes = {}
-        self._foreach_builder_field(lambda field: self._generate_build_variable_fields_size(variable_sizes, field))
-        self.append('auto pTransaction = createTransaction<TransactionType>(size);')
+        self.append('auto pTransaction = createTransaction<TransactionType>(sizeImpl<TransactionType>());')
         self.append('')
 
         self.append('// 2. set fixed transaction fields')
@@ -163,8 +158,28 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);'''.format(NAME=param_
         self.indent -= 1
         self.append('}}')
 
+    def _generate_size(self):
+        self.append('template<typename TransactionType>')
+        self.append('size_t {BUILDER_NAME}::sizeImpl() const {{')
+        self.indent += 1
+        self.append('// calculate transaction size')
+        self.append('auto size = sizeof(TransactionType);')
+
+        # go through variable data and add it to size, collect sizes
+        variable_sizes = {}
+        self._foreach_builder_field(lambda field: self._generate_build_variable_fields_size(variable_sizes, field))
+
+        self.append('return size;')
+        self.indent -= 1
+        self.append('}}\n')
+        return variable_sizes
+
     def _builds(self):
-        self.append('''std::unique_ptr<{BUILDER_NAME}::Transaction> {BUILDER_NAME}::build() const {{
+        self.append('''size_t {BUILDER_NAME}::size() const {{
+\treturn sizeImpl<Transaction>();
+}}
+
+std::unique_ptr<{BUILDER_NAME}::Transaction> {BUILDER_NAME}::build() const {{
 \treturn buildImpl<Transaction>();
 }}
 
@@ -172,7 +187,8 @@ std::unique_ptr<{BUILDER_NAME}::EmbeddedTransaction> {BUILDER_NAME}::buildEmbedd
 \treturn buildImpl<EmbeddedTransaction>();
 }}
 ''')
-        self._generate_build()
+        variable_sizes = self._generate_size()
+        self._generate_build(variable_sizes)
 
     def _class_footer(self):
         pass

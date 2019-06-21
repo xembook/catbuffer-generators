@@ -65,7 +65,11 @@ class HeaderGenerator(CppGenerator):
     def _builds(self):
         self.append('public:')
         self.indent += 1
-        self.append('''/// Builds a new {COMMENT_NAME} transaction.
+        self.append('''/// Returns size of {COMMENT_NAME} transaction.
+/// \\note This returns size of a normal transaction not embedded transaction.
+size_t size() const;
+
+/// Builds a new {COMMENT_NAME} transaction.
 std::unique_ptr<Transaction> build() const;
 
 /// Builds a new embedded {COMMENT_NAME} transaction.
@@ -76,6 +80,9 @@ std::unique_ptr<EmbeddedTransaction> buildEmbedded() const;
         self.append('private:')
         self.indent += 1
         self.append('''template<typename TTransaction>
+size_t sizeImpl() const;
+
+template<typename TTransaction>
 std::unique_ptr<TTransaction> buildImpl() const;
 ''')
         self.indent -= 1
