@@ -95,7 +95,7 @@ class CppGenerator(GeneratorInterface):
         all_hints = {}
         for filename in filenames:
             with open('generators/cpp_builder/hints/{0}.yaml'.format(filename)) as input_file:
-                hints = yaml.load(input_file)
+                hints = yaml.load(input_file, Loader=yaml.SafeLoader)
                 for hint_key in hints:
                     if hint_key not in all_hints:
                         all_hints[hint_key] = {}
@@ -157,7 +157,7 @@ class CppGenerator(GeneratorInterface):
     @staticmethod
     def _is_builtin_type(typename, size):
         # uint8_t up to uint64_t are passed as 'byte' with size set to proper value
-        return 'byte' == typename and size < 8
+        return 'byte' == typename and size <= 8
 
     @staticmethod
     def _builtin_type(size, signedness):

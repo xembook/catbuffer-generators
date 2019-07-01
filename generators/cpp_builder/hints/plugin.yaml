@@ -24,3 +24,6 @@ RegisterNamespaceTransaction: namespace
 AccountAddressRestrictionTransaction: restriction_account
 AccountMosaicRestrictionTransaction: restriction_account
 AccountOperationRestrictionTransaction: restriction_account
+
+MosaicAddressRestrictionTransaction: restriction_mosaic
+MosaicGlobalRestrictionTransaction: restriction_mosaic
