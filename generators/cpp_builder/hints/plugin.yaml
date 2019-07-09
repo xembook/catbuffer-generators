@@ -7,10 +7,12 @@ AggregateBondedTransaction: aggregate
 
 HashLockTransaction: lock_hash
 
-TransferTransaction: transfer
-
 SecretLockTransaction: lock_secret
 SecretProofTransaction: lock_secret
+
+AccountMetadataTransaction: metadata
+MosaicMetadataTransaction: metadata
+NamespaceMetadataTransaction: metadata
 
 MosaicDefinitionTransaction: mosaic
 MosaicSupplyChangeTransaction: mosaic
@@ -27,3 +29,5 @@ AccountOperationRestrictionTransaction: restriction_account
 
 MosaicAddressRestrictionTransaction: restriction_mosaic
 MosaicGlobalRestrictionTransaction: restriction_mosaic
+
+TransferTransaction: transfer
