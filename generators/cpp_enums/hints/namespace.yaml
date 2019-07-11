@@ -1,0 +1,6 @@
+# enums need to fall into proper namespaces
+
+NetworkIdentifier: model
+
+ConnectResult: ionet
+
