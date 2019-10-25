@@ -69,7 +69,7 @@ class HeaderGenerator(CppGenerator):
     def _builds(self):
         self.append('public:')
         self.indent += 1
-        self.append('''/// Returns size of {COMMENT_NAME} transaction.
+        self.append('''/// Gets the size of {COMMENT_NAME} transaction.
 /// \\note This returns size of a normal transaction not embedded transaction.
 size_t size() const;
 

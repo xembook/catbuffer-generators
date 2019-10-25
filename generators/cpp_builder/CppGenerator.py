@@ -217,7 +217,8 @@ class CppGenerator(GeneratorInterface):
     def _foreach_builder_field(self, callback):
         for field in self.schema[self.transaction_body_name()]['layout']:
             # for builder fields, skip Size or count fields, they are always used for variable data
-            if field['name'].endswith('Size') or field['name'].endswith('Count'):
+            name = field['name']
+            if name.endswith('Size') or name.endswith('Count') or '_Reserved' in name:
                 continue
 
             callback(field)
