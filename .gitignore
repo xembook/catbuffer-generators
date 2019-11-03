@@ -8,3 +8,6 @@ __pycache__/
 _generated/
 .python-version
 node_modules/
+.gradle
+build
+.idea

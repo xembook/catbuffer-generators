@@ -83,7 +83,7 @@ class JavaGeneratorBase(ABC):
         if line is not None:
             self.class_output += [line]
 
-        line = '' if self._is_body_class() else 'public '
+        line = 'public '
         line += 'final ' if self.finalized_class or self._is_body_class() else ''
         line += '{0} {1} '.format(
             self.class_type, self.generated_class_name)

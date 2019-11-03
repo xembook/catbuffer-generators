@@ -8,7 +8,7 @@ import java.util.function.Function;
 /**
  * Generator utility class.
  */
-final class GeneratorUtils {
+public final class GeneratorUtils {
 	/**
 	 * Constructor.
 	 */

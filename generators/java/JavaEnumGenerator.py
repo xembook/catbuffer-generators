@@ -73,6 +73,7 @@ class JavaEnumGenerator(JavaGeneratorBase):
 
     def _add_public_declarations(self):
         self._add_raw_value_of_method()
+        self._add_get_raw_value_method()
 
     def _add_private_declarations(self):
         self._add_private_declaration()
@@ -92,6 +93,13 @@ class JavaEnumGenerator(JavaGeneratorBase):
         new_method.add_instructions(
             ['throw new IllegalArgumentException(value + " was not a backing value for {0}.")'.format(self.generated_class_name)])
         self._add_method_documentation(new_method, 'Gets enum value.', [('value', 'Raw value of the enum')], 'Enum value')
+        self._add_method(new_method)
+
+    def _add_get_raw_value_method(self):
+        enum_type = get_type(self.class_schema)
+        new_method = JavaMethodGenerator('public', '{0}'.format(enum_type), 'getRawValue', [], '')
+        new_method.add_instructions(['return this.value'])
+        self._add_method_documentation(new_method, 'Gets the value of the enum', [], 'Value of the enum.')
         self._add_method(new_method)
 
     def _generate_bitmaskable_interface(self):

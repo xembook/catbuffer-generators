@@ -3,7 +3,7 @@ from .Helpers import get_attribute_kind, TypeDescriptorDisposition, get_attribut
 from .Helpers import get_generated_class_name, get_builtin_type, indent, get_attribute_size
 from .Helpers import get_generated_type, get_attribute_property_equal, AttributeKind, is_byte_type
 from .Helpers import get_read_method_name, get_reverse_method_name, get_write_method_name
-from .Helpers import is_builtin_type, get_comments_from_attribute, get_import_for_type
+from .Helpers import is_builtin_type, get_comments_from_attribute, get_imports_for_type
 from .JavaGeneratorBase import JavaGeneratorBase
 from .JavaMethodGenerator import JavaMethodGenerator
 
@@ -62,8 +62,8 @@ class JavaClassGenerator(JavaGeneratorBase):
         self.class_output += ['']
 
     def _add_required_import_if_needed(self, var_type):
-        import_string = get_import_for_type(var_type)
-        if import_string:
+        import_strings = get_imports_for_type(var_type)
+        for import_string in import_strings:
             self._add_required_import(import_string)
 
     def _add_private_declaration(self, attribute, private_output):
@@ -207,7 +207,7 @@ class JavaClassGenerator(JavaGeneratorBase):
                 inline_class = attribute['type']
                 if attribute['disposition'] == TypeDescriptorDisposition.Inline.value:
                     if self.should_generate_class(inline_class):
-                        # Class was grenerated so it can be declare aggregate
+                        # Class was generated so it can be declare aggregate
                         attribute['name'] = self._get_name_from_type(inline_class)
                         if (self.base_class_name == inline_class and
                                 self.base_class_name in ignore_inline_class):

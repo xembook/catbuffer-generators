@@ -160,22 +160,23 @@ def get_generated_type(schema, attribute):
         typename = get_generated_class_name(typename, attribute, schema)
 
     if attribute_kind == AttributeKind.ARRAY:
-        return 'ArrayList<{0}>'.format(typename)
+        return 'List<{0}>'.format(typename)
     if attribute_kind == AttributeKind.FLAGS:
         return 'EnumSet<{0}>'.format(typename)
 
     return typename
 
 
-def get_import_for_type(data_type):
+def get_imports_for_type(data_type):
     actual_type = data_type.split('<')[0] if '<' in data_type else data_type
 
     type_import = {
-        'ByteBuffer': 'java.nio.ByteBuffer',
-        'ArrayList': 'java.util.ArrayList',
-        'EnumSet': 'java.util.EnumSet'
+        'ByteBuffer': ['java.nio.ByteBuffer'],
+        'ArrayList': ['java.util.ArrayList'],
+        'List': ['java.util.List'],
+        'EnumSet': ['java.util.EnumSet'],
     }
-    return type_import[actual_type] if actual_type in type_import.keys() else None
+    return type_import[actual_type] if actual_type in type_import.keys() else []
 
 
 def append_period_if_needed(line):

@@ -1,11 +1,22 @@
+dist: trusty
 language: python
 python:
   - "3.6"
-
+addons:
+  apt:
+    packages:
+      - openjdk-8-jdk
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
 install: pip install pycodestyle pylint pylint-quotes pyyaml
 
 script:
   - pylint --load-plugins pylint_quotes generators
   - pycodestyle --config=.pycodestyle .
   - bash ./scripts/generate_all.sh cpp_builder
-  - bash ./scripts/generate_all.sh java
+  - bash ./scripts/generate_and_build_java.sh
