@@ -33,7 +33,7 @@ class JavaFileGenerator:
                 self.code = [line.strip() for line in header]
 
     def set_import(self):
-        self.code += ['import java.io.DataInput;']
+        self.code += ['import java.io.DataInputStream;']
 
     def set_package(self):
         self.code += ['package io.nem.catapult.builders;'] + ['']

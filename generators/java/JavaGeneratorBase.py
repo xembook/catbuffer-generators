@@ -58,7 +58,7 @@ class JavaGeneratorBase(ABC):
 
     def _add_load_from_binary_method(self):
         load_from_binary_method = JavaMethodGenerator('public', self.generated_class_name, 'loadFromBinary',
-                                                      ['final DataInput stream'], '', True)
+                                                      ['final DataInputStream stream'], '', True)
         self._add_load_from_binary_custom(load_from_binary_method)
         self._add_method_documentation(load_from_binary_method, 'Creates an instance of {0} from a stream.'
                                        .format(self.generated_class_name), [('stream', 'Byte stream to use to serialize the object.')],
@@ -83,7 +83,7 @@ class JavaGeneratorBase(ABC):
         if line is not None:
             self.class_output += [line]
 
-        line = '' if self._is_body_class() else 'public '
+        line = 'public '
         line += 'final ' if self.finalized_class or self._is_body_class() else ''
         line += '{0} {1} '.format(
             self.class_type, self.generated_class_name)

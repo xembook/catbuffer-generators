@@ -25,6 +25,38 @@ def is_byte_type(typename):
     return typename == TypeDescriptorType.Byte.value
 
 
+def is_inline_type(attribute):
+    return 'disposition' in attribute and attribute['disposition'] == TypeDescriptorDisposition.Inline.value
+
+
+def is_const_type(attribute):
+    return 'disposition' in attribute and attribute['disposition'] == TypeDescriptorDisposition.Const.value
+
+
+def is_fill_array_type(attribute):
+    return 'disposition' in attribute and attribute['disposition'] == TypeDescriptorDisposition.Fill.value
+
+
+def is_var_array_type(attribute):
+    return 'disposition' in attribute and attribute['disposition'] == TypeDescriptorDisposition.Var.value
+
+
+def is_any_array_kind(attribute_kind):
+    return AttributeKind.ARRAY == attribute_kind or AttributeKind.VAR_ARRAY == attribute_kind or AttributeKind.FILL_ARRAY == attribute_kind
+
+
+def is_sorted_array(attribute):
+    return 'sort_key' in attribute
+
+
+def is_reserved_field(attribute):
+    return '_Reserved' in attribute['name']
+
+
+def is_attribute_count_size_field(attribute):
+    return attribute['name'].endswith('Size') or attribute['name'].endswith('Count')
+
+
 def get_generated_class_name(typename, class_schema, schema):
     class_type = class_schema['type']
     default_name = typename + 'Dto'
@@ -45,6 +77,9 @@ class AttributeKind(Enum):
     ARRAY = 3
     CUSTOM = 4
     FLAGS = 5
+    SIZE_FIELD = 6
+    FILL_ARRAY = 7
+    VAR_ARRAY = 8
     UNKNOWN = 100
 
 
@@ -62,6 +97,13 @@ def is_flags_enum(name):
 
 
 def get_attribute_kind(attribute):
+    if is_var_array_type(attribute):
+        return AttributeKind.VAR_ARRAY
+    if is_fill_array_type(attribute):
+        return AttributeKind.FILL_ARRAY
+    if is_attribute_count_size_field(attribute):
+        return AttributeKind.SIZE_FIELD
+
     attribute_type = attribute['type']
 
     if is_flags_enum(attribute_type):
@@ -87,6 +129,8 @@ def get_attribute_kind(attribute):
 class TypeDescriptorDisposition(Enum):
     Inline = 'inline'
     Const = 'const'
+    Var = 'var'
+    Fill = 'fill'
 
 
 def indent(code, n_indents=1):
@@ -137,7 +181,7 @@ def get_reverse_method_name(size):
 
 
 def get_write_method_name(size):
-    if isinstance(size, str) or size > 8:
+    if isinstance(size, str) or size > 8 or size == 0:
         method_name = 'write'
     else:
         typesize_methodname = {1: 'writeByte',
@@ -151,7 +195,7 @@ def get_write_method_name(size):
 def get_generated_type(schema, attribute):
     typename = attribute['type']
     attribute_kind = get_attribute_kind(attribute)
-    if attribute_kind == AttributeKind.SIMPLE:
+    if attribute_kind == AttributeKind.SIMPLE or attribute_kind == AttributeKind.SIZE_FIELD:
         return get_builtin_type(get_attribute_size(schema, attribute))
     if attribute_kind == AttributeKind.BUFFER:
         return 'ByteBuffer'
@@ -159,8 +203,8 @@ def get_generated_type(schema, attribute):
     if not is_byte_type(typename):
         typename = get_generated_class_name(typename, attribute, schema)
 
-    if attribute_kind == AttributeKind.ARRAY:
-        return 'ArrayList<{0}>'.format(typename)
+    if is_any_array_kind(attribute_kind):
+        return 'List<{0}>'.format(typename)
     if attribute_kind == AttributeKind.FLAGS:
         return 'EnumSet<{0}>'.format(typename)
 
@@ -173,7 +217,9 @@ def get_import_for_type(data_type):
     type_import = {
         'ByteBuffer': 'java.nio.ByteBuffer',
         'ArrayList': 'java.util.ArrayList',
-        'EnumSet': 'java.util.EnumSet'
+        'EnumSet': 'java.util.EnumSet',
+        'List': 'java.util.List',
+        'ByteArrayInputStream': 'java.io.ByteArrayInputStream'
     }
     return type_import[actual_type] if actual_type in type_import.keys() else None
 
