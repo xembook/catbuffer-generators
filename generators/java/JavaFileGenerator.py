@@ -75,8 +75,7 @@ class JavaFileGenerator:
             yield self.code, enum_class.get_generated_name()
 
         # write all the  helper files
-        helper_files = ['BitMaskable', 'GeneratorUtils', 'AggregateTransactionBuilder', 'CosignatureBuilder',
-                        'EntityTypeDto', 'AccountRestrictionTypeDto']
+        helper_files = ['BitMaskable', 'GeneratorUtils', 'EntityTypeDto', 'Serializer']
         for filename in helper_files:
             self._init_class()
             new_class = JavaStaticClassGenerator(filename)

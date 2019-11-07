@@ -2,7 +2,7 @@ from .Helpers import create_enum_name, get_default_value, get_class_type_from_na
 from .Helpers import get_attribute_kind, TypeDescriptorDisposition, get_attribute_if_size, is_fill_array_type
 from .Helpers import get_generated_class_name, get_builtin_type, indent, get_attribute_size, is_reserved_field
 from .Helpers import get_generated_type, get_attribute_property_equal, AttributeKind, is_byte_type
-from .Helpers import get_read_method_name, get_reverse_method_name, get_write_method_name, is_any_array_kind
+from .Helpers import get_read_method_name, get_reverse_method_name, get_write_method_name, is_any_array_kind, InterfaceType
 from .Helpers import is_builtin_type, get_comments_from_attribute, get_import_for_type, is_var_array_type
 from .JavaGeneratorBase import JavaGeneratorBase
 from .JavaMethodGenerator import JavaMethodGenerator
@@ -22,6 +22,7 @@ class JavaClassGenerator(JavaGeneratorBase):
         self.class_type = 'class'
         self.condition_list = []
         self.condition_binary_declare_map = {}
+        self.implements_list.add(InterfaceType.Serializer)
 
         if 'layout' in self.class_schema:
             # Find base class
@@ -169,17 +170,17 @@ class JavaClassGenerator(JavaGeneratorBase):
 
         if kind == AttributeKind.SIMPLE:
             return '{0}; // {1}'.format(attribute['size'], attribute['name'])
-        elif kind == AttributeKind.BUFFER:
+        if kind == AttributeKind.BUFFER:
             return 'this.{0}.array().length;'.format(attribute['name'])
-        elif is_any_array_kind(kind):
+        if is_any_array_kind(kind):
             return 'this.{0}.stream().mapToInt(o -> o.getSize()).sum();'.format(attribute['name'])
-        elif kind == AttributeKind.FLAGS:
+        if kind == AttributeKind.FLAGS:
             return '{0}.values()[0].getSize(); // {1}'.format(get_generated_class_name(attribute['type'], attribute, self.schema),
                                                               attribute['name'])
-        elif kind == AttributeKind.SIZE_FIELD:
+        if kind == AttributeKind.SIZE_FIELD:
             return '{0}; // {1}'.format(attribute['size'], attribute['name'])
-        else:
-            return 'this.{0}.getSize();'.format(attribute['name'])
+
+        return 'this.{0}.getSize();'.format(attribute['name'])
 
     def _add_size_value(self, attribute, method_writer):
         line = 'size += ' + self._get_size_statement(attribute)
@@ -334,7 +335,7 @@ class JavaClassGenerator(JavaGeneratorBase):
         load_from_binary_method.add_instructions(
             ['final ByteBuffer transactionBytes = ByteBuffer.allocate({0})'.format(attribute_sizename)])
         self._add_required_import_if_needed('ByteBuffer')
-        load_from_binary_method.add_instructions(['stream.read(transactionBytes.array())'.format(attribute_sizename)])
+        load_from_binary_method.add_instructions(['stream.read(transactionBytes.array())'])
         load_from_binary_method.add_instructions(
             ['final DataInputStream dataInputStream =  new DataInputStream(new ByteArrayInputStream(transactionBytes.array()))'])
         self._add_required_import_if_needed('ByteArrayInputStream')

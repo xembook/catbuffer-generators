@@ -2,11 +2,17 @@
 set -e
 
 rootDir="$(dirname $0)/.."
-bash "$rootDir/scripts/generate_all.sh" java
+
+source "$rootDir/catbuffer/scripts/schema_lists.sh"
+source "$rootDir/catbuffer/scripts/generate_batch.sh"
+
+
+rm -rf "${rootDir}/catbuffer/_generated/java"
+PYTHONPATH=".:${PYTHONPATH}" generate_batch transaction_inputs catbuffer java
 
 SNAPSHOT_PREFIX="-SNAPSHOT"
 artifactName="catbuffer"
-artifactVersion="0.0.3-SNAPSHOT"
+artifactVersion="2.0.0-SNAPSHOT"
 
 if [[ $1 == "release" ]]; then
   artifactVersion="${artifactVersion%$SNAPSHOT_PREFIX}"
@@ -24,6 +30,9 @@ sed -i -e "s/#artifactVersion/$artifactVersion/g" "$rootDir/build/java/$artifact
 if [[ $1 == "release" ]]; then
   echo "Releasing artifact $artifactVersion"
   $rootDir/gradlew -p "$rootDir/build/java/$artifactName/" publish closeAndReleaseRepository
+elif [[ $1 == "publish" ]]; then
+  echo "Publishing artifact $artifactVersion"
+  $rootDir/gradlew -p "$rootDir/build/java/$artifactName/" publish
 else
   echo "Installing artifact $artifactVersion"
   $rootDir/gradlew -p "$rootDir/build/java/$artifactName/" install

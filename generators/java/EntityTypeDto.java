@@ -1,4 +1,3 @@
-
 import java.io.DataInput;
 
 /**
@@ -159,12 +158,7 @@ public enum EntityTypeDto {
             });
     }
 
-    /**
-     * Gets the value of the enum.
-     *
-     * @return Value of the enum.
-     */
-    public short getRawValue() {
+    public short getValue() {
         return value;
     }
 }

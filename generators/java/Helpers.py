@@ -11,6 +11,7 @@ class TypeDescriptorType(Enum):
 class InterfaceType(Enum):
     """Interface type enum"""
     BitMaskable = 'BitMaskable'
+    Serializer = 'Serializer'
 
 
 def is_struct_type(typename):
@@ -42,7 +43,7 @@ def is_var_array_type(attribute):
 
 
 def is_any_array_kind(attribute_kind):
-    return AttributeKind.ARRAY == attribute_kind or AttributeKind.VAR_ARRAY == attribute_kind or AttributeKind.FILL_ARRAY == attribute_kind
+    return attribute_kind in (AttributeKind.ARRAY, AttributeKind.VAR_ARRAY, AttributeKind.FILL_ARRAY)
 
 
 def is_sorted_array(attribute):
@@ -96,6 +97,7 @@ def is_flags_enum(name):
     return name.endswith('Flags')
 
 
+# pylint: disable=R0911
 def get_attribute_kind(attribute):
     if is_var_array_type(attribute):
         return AttributeKind.VAR_ARRAY
@@ -195,7 +197,7 @@ def get_write_method_name(size):
 def get_generated_type(schema, attribute):
     typename = attribute['type']
     attribute_kind = get_attribute_kind(attribute)
-    if attribute_kind == AttributeKind.SIMPLE or attribute_kind == AttributeKind.SIZE_FIELD:
+    if attribute_kind in (AttributeKind.SIMPLE, AttributeKind.SIZE_FIELD):
         return get_builtin_type(get_attribute_size(schema, attribute))
     if attribute_kind == AttributeKind.BUFFER:
         return 'ByteBuffer'

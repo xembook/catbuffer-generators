@@ -1,4 +1,3 @@
-dist: trusty
 language: python
 python:
   - "3.6"
@@ -14,9 +13,12 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 install: pip install pycodestyle pylint pylint-quotes pyyaml
-
-script:
+env:
+  matrix:
+    - SCRIPT="./scripts/generate_all.sh cpp_builder"
+    - SCRIPT="./scripts/generate_and_build_java.sh"
+before_script:
   - pylint --load-plugins pylint_quotes generators
   - pycodestyle --config=.pycodestyle .
-  - bash ./scripts/generate_all.sh cpp_builder
-  - bash ./scripts/generate_and_build_java.sh
+script:
+  - bash $SCRIPT

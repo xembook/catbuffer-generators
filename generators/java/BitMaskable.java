@@ -6,5 +6,5 @@ public interface BitMaskable {
 	 *
 	 * @return Value of the enum.
 	 */
-	public long getValue();
+	long getValue();
 }
