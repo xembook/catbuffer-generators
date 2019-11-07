@@ -220,7 +220,7 @@ class JavaClassGenerator(JavaGeneratorBase):
                 inline_class = attribute['type']
                 if attribute['disposition'] == TypeDescriptorDisposition.Inline.value:
                     if self.should_generate_class(inline_class):
-                        # Class was grenerated so it can be declare aggregate
+                        # Class was generated so it can be declare aggregate
                         attribute['name'] = self._get_name_from_type(inline_class)
                         if (self.base_class_name == inline_class and
                                 self.base_class_name in ignore_inline_class):

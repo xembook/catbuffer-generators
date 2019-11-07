@@ -132,6 +132,8 @@ m_{NAME}.assign({NAME}.pData, {NAME}.pData + {NAME}.Size);'''.format(NAME=param_
                     setter = self.hints['setters'].get(field['name'], '') if 'setters' in self.hints else ''
                     if setter:
                         self.append('pTransaction->{TX_FIELD_NAME} = {SETTER};'.format(**template, SETTER=setter))
+                    elif '_Reserved' in field['name']:
+                        self.append('pTransaction->{TX_FIELD_NAME} = 0;'.format(**template))
                     else:
                         self.append('pTransaction->{TX_FIELD_NAME} = m_{NAME};'.format(**template))
 
