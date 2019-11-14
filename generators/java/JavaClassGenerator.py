@@ -196,7 +196,7 @@ class JavaClassGenerator(JavaGeneratorBase):
         new_getter.add_instructions(['return size'])
 
     def _add_stream_size_getter(self):
-        new_getter = JavaMethodGenerator('protected', 'int', 'getStreamSize', [])
+        new_getter = JavaMethodGenerator('public', 'int', 'getStreamSize', [])
         new_getter.add_instructions(['return this.size'])
         self._add_method_documentation(new_getter, 'Gets the size if created from a stream otherwise zero', [], 'Object size from stream')
         self._add_method(new_getter)
