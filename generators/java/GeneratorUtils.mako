@@ -1,9 +1,12 @@
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.util.EnumSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.SequenceInputStream;
+import java.io.DataOutputStream;
 
 /**
  * Generator utility class.
@@ -185,4 +188,48 @@ public final class GeneratorUtils {
 			}
 		});
 	}
+
+    /**
+    * It moves the output stream pointer the padding size calculated from the payload size
+    *
+    * @param size the payload size used to calcualted the padding
+    * @param dataInputStream the input stream that will be moved the calcauted padding size
+    */
+    public static void skipPadding(int size,
+        final DataInputStream dataInputStream) {
+        GeneratorUtils.propagate(() -> {
+            int padding = getPadding(size);
+            dataInputStream.skipBytes(padding);
+            return null;
+        });
+    }
+    /**
+    * This method writes 0 into the dataOutputStream. The amount of 0s is the calculated padding size
+    * from provided payload size.
+    *
+    * @param size the payload size used to calcualted the padding
+    * @param dataOutputStream used to write the 0s.
+    *
+    */
+    public static void addPadding(int size, final DataOutputStream dataOutputStream) {
+        GeneratorUtils.propagate(() -> {
+            int padding = getPadding(size);
+            while (padding > 0) {
+                dataOutputStream.write(0);
+                padding--;
+            }
+            return null;
+        });
+    }
+
+    /**
+    * It calcualtes the padding that needs to be added/skipped when processing inner transactions.
+    *
+    * @param size the size of the payload using to calculate the padding
+    * @return the padding to be added/skipped.
+    */
+    public static int getPadding(int size) {
+        int alignment = 8;
+        return 0 == size % alignment ? 0 : alignment - (size % alignment);
+    }
 }

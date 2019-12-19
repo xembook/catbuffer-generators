@@ -195,6 +195,21 @@ class JavaClassGenerator(JavaGeneratorBase):
         self._recurse_foreach_attribute(self.name, self._add_size_value, new_getter, [self.base_class_name, self._get_body_class_name()])
         new_getter.add_instructions(['return size'])
 
+    def _add_body_getter(self):
+        if self.base_class_name in ['Transaction', 'EmbeddedTransaction']:
+            body_class_name = self._get_body_class_name()
+            new_getter = JavaMethodGenerator('public', body_class_name + 'Builder', 'getBody', [])
+            new_getter.add_annotation('@Override')
+            new_getter.add_instructions(['return this.' + body_class_name[0].lower() + body_class_name[1:]])
+            self._add_method_documentation(new_getter, 'Gets the body builder of the object.', [], 'Body builder.')
+            self._add_method(new_getter)
+        elif self.name in ['Transaction', 'EmbeddedTransaction']:
+            body_class_name = self._get_body_class_name()
+            new_getter = JavaMethodGenerator('public', 'Serializer', 'getBody', [])
+            new_getter.add_instructions(['return null'])
+            self._add_method_documentation(new_getter, 'Gets the body builder of the object.', [], 'Body builder.')
+            self._add_method(new_getter)
+
     def _add_stream_size_getter(self):
         new_getter = JavaMethodGenerator('public', 'int', 'getStreamSize', [])
         new_getter.add_instructions(['return this.size'])
@@ -464,7 +479,6 @@ class JavaClassGenerator(JavaGeneratorBase):
         if parent_attribute is not None and is_var_array_type(parent_attribute):
             size_statement = self._get_size_statement(parent_attribute)
             full_property_name = '({0}) {1}'.format(get_builtin_type(size), size_statement[:-1])
-            print('get size update', size_statement, attribute)
         else:
             size_extension = '.size()' if attribute_name.endswith('Count') else '.array().length'
             full_property_name = '({0}) {1}'.format(get_builtin_type(size), 'this.' +

@@ -3,22 +3,25 @@ set -e
 
 rootDir="$(dirname $0)/.."
 
-source "$rootDir/catbuffer/scripts/schema_lists.sh"
-source "$rootDir/catbuffer/scripts/generate_batch.sh"
-
-
-rm -rf "${rootDir}/catbuffer/_generated/java"
-PYTHONPATH=".:${PYTHONPATH}" generate_batch transaction_inputs catbuffer java
-
 SNAPSHOT_PREFIX="-SNAPSHOT"
 artifactName="catbuffer"
-artifactVersion="2.0.0-SNAPSHOT"
+artifactVersion="2.0.1-SNAPSHOT"
+
+all=("all")
+rm -rf "${rootDir}/catbuffer/_generated/java"
+rm -rf "$rootDir/build/java/$artifactName"
+
+PYTHONPATH=".:${PYTHONPATH}" python3 "catbuffer/main.py" \
+  --schema catbuffer/schemas/all.cats \
+  --include catbuffer/schemas \
+  --output "catbuffer/_generated" \
+  --generator java \
+  --copyright catbuffer/HEADER.inc
 
 if [[ $1 == "release" ]]; then
   artifactVersion="${artifactVersion%$SNAPSHOT_PREFIX}"
 fi
 
-rm -rf "$rootDir/build/java/$artifactName"
 mkdir -p "$rootDir/build/java/$artifactName/src/main/java/io/nem/catapult/builders/"
 cp "$rootDir/catbuffer/_generated/java/"* "$rootDir/build/java/$artifactName/src/main/java/io/nem/catapult/builders/"
 cp "$rootDir/generators/java/build.gradle" "$rootDir/build/java/$artifactName/"

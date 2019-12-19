@@ -103,6 +103,9 @@ class JavaGeneratorBase(ABC):
         self._add_method_documentation(new_getter, 'Gets the size of the object.', [], 'Size in bytes.')
         self._add_method(new_getter)
 
+    def _add_body_getter(self):
+        pass
+
     @staticmethod
     def _add_method_documentation(method_writer, method_description, param_list, return_description):
         method_writer.add_documentations(['/**'])
@@ -144,6 +147,7 @@ class JavaGeneratorBase(ABC):
         self._add_private_declarations()
         self._add_public_declarations()
         self._add_size_getter()
+        self._add_body_getter()
         self._generate_interface_methods()
         self._add_load_from_binary_method()
         self._add_serialize_method()
