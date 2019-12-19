@@ -12,7 +12,7 @@ cache:
   directories:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
-install: pip install pycodestyle pylint pylint-quotes pyyaml
+install: pip install pycodestyle pylint pylint-quotes pyyaml mako
 env:
   matrix:
     - SCRIPT="./scripts/generate_all.sh cpp_builder"
