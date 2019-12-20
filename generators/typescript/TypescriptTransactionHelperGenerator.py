@@ -46,7 +46,7 @@ class TypescriptTransactionHelperGenerator():
                 line += [indent('return GeneratorUtils.concatTypedArrays(byte, padding);', 4)]
 
         line += [indent('default:', 3)]
-        line += [indent('throw new Error(`Transaction type: ${transaction.type} not recognized.`)', 4)]
+        line += [indent('throw new Error(`Transaction type: ${transaction.type} not recognized.`);', 4)]
         line += [indent('}', 2)]
         line += [indent('}')]
         return line
@@ -61,10 +61,10 @@ class TypescriptTransactionHelperGenerator():
             if (value != 0 and not name.upper().startswith('AGGREGATE')):
                 builder_class = 'Embedded{0}'.format(''.join([a.capitalize() for a in name.split('_')]))
                 line += [indent('case EntityTypeDto.{0}:'.format(name), 3)]
-                line += [indent('return {0}.loadFromBinary(bytes)'.format(builder_class), 4)]
+                line += [indent('return {0}.loadFromBinary(bytes);'.format(builder_class), 4)]
 
         line += [indent('default:', 3)]
-        line += [indent('throw new Error(`Transaction type: ${header.getType()} not recognized.`)', 4)]
+        line += [indent('throw new Error(`Transaction type: ${header.getType()} not recognized.`);', 4)]
         line += [indent('}', 2)]
         line += [indent('}')]
         return line
