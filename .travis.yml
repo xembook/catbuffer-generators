@@ -9,3 +9,4 @@ script:
   - pycodestyle --config=.pycodestyle .
   - bash ./scripts/generate_all.sh cpp_builder
   - bash ./scripts/generate_all.sh java
+  - bash ./scripts/generate_all.sh typescript
