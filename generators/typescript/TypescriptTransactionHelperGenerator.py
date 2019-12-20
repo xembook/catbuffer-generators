@@ -72,7 +72,7 @@ class TypescriptTransactionHelperGenerator():
     @classmethod
     def _write_size_getter(cls):
         line = [indent('public static getEmbeddedTransactionSize(transactions: EmbeddedTransactionBuilder[]): number {')]
-        line += [indent('return transactions.map((o) => EmbeddedTransactionHelper.serialize(o).length).reduce((a, b) => a + b);', 2)]
+        line += [indent('return transactions.map((o) => EmbeddedTransactionHelper.serialize(o).length).reduce((a, b) => a + b, 0);', 2)]
         line += [indent('}')]
         return line
 
