@@ -261,6 +261,8 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
             line = ''
             if attribute['type'] == 'EntityType':
                 line += 'this.{0}.forEach(() => size += 2);'.format(attribute['name'])
+            elif attribute['type'] == 'EmbeddedTransaction':
+                line += 'this.{0}.forEach((o) => size += EmbeddedTransactionHelper.serialize(o).length);'.format(attribute['name'])
             else:
                 line += 'this.{0}.forEach((o) => size += o.getSize());'.format(attribute['name'])
         elif attribute_kind == AttributeType.FLAGS:
@@ -576,11 +578,11 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
         if self.is_count_size_field(attribute):
             size = get_attribute_size(self.schema, attribute)
             size_extension = '.length'
-            full_property_name = '{0}'.format(get_attribute_if_size(attribute['name'], self.class_schema['layout'],
-                                                                    self.schema) + size_extension)
-            method = '{0}(this.{1}, {2})'.format(get_read_method_name(size),
-                                                 full_property_name,
-                                                 size)
+            attribute_name = get_attribute_if_size(attribute['name'], self.class_schema['layout'], self.schema)
+            full_property_name = 'this.{0}'.format(attribute_name + size_extension)
+            if attribute['name'] == 'payloadSize' and self.name == 'AggregateTransactionBody':
+                full_property_name = 'EmbeddedTransactionHelper.getEmbeddedTransactionSize(this.{0})'.format(attribute_name)
+            method = '{0}({1}, {2})'.format(get_read_method_name(size), full_property_name, size)
             line = 'const {0} = {1}'.format(attribute_bytes_name, method)
             line2 = 'newArray = GeneratorUtils.concatTypedArrays(newArray, {0})'.format(attribute_bytes_name)
             serialize_method.add_instructions([line])

@@ -24,6 +24,8 @@ class TypescriptTransactionHelperGenerator():
         line += serialization_method
         line += ['']
         line += load_from_binary_method
+        line += ['']
+        line += self._write_size_getter()
         line += ['}']
         self.class_output += line
 
@@ -64,6 +66,13 @@ class TypescriptTransactionHelperGenerator():
         line += [indent('default:', 3)]
         line += [indent('throw new Error(`Transaction type: ${header.getType()} not recognized.`)', 4)]
         line += [indent('}', 2)]
+        line += [indent('}')]
+        return line
+
+    @classmethod
+    def _write_size_getter(cls):
+        line = [indent('public static getEmbeddedTransactionSize(transactions: EmbeddedTransactionBuilder[]): number {')]
+        line += [indent('return transactions.map((o) => EmbeddedTransactionHelper.serialize(o).length).reduce((a, b) => a + b);', 2)]
         line += [indent('}')]
         return line
 
