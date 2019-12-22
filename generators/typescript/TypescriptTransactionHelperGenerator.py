@@ -77,7 +77,7 @@ class TypescriptTransactionHelperGenerator():
         return line
 
     def _add_import(self, name):
-        self.imports += ['import {{ {0} }} from \'./{0}\''.format(name)]
+        self.imports += ['import {{ {0} }} from \'./{0}\';'.format(name)]
 
     def generate(self):
         self._read_file()
