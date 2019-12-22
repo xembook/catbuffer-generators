@@ -504,15 +504,18 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
             load_attribute[attribute_kind](attribute, load_from_binary_method)
 
     def _serialize_attribute_simple(self, attribute, serialize_method):
-        size = get_attribute_size(self.schema, attribute)
-        method = '{0}(this.{1}(), {2})'.format(get_read_method_name(size),
-                                               self._get_generated_getter_name(attribute['name']),
-                                               size) if size < 8 else '{0}(this.{1}())'.format(get_read_method_name(size),
-                                                                                               self._get_generated_getter_name(
-                                                                                                   attribute['name']))
-        lines = ['const {0}Bytes = {1}'.format(attribute['name'], method)]
-        lines += ['newArray = GeneratorUtils.concatTypedArrays(newArray, {0})'.format(attribute['name']+'Bytes')]
-        self._add_attribute_condition_if_needed(attribute, serialize_method, 'this.', lines, False, False)
+        if self.name == 'Receipt' and attribute['name'] == 'size':
+            self._add_attribute_condition_if_needed(attribute, serialize_method, 'this.', [], False, False)
+        else:
+            size = get_attribute_size(self.schema, attribute)
+            method = '{0}(this.{1}(), {2})'.format(get_read_method_name(size),
+                                                   self._get_generated_getter_name(attribute['name']),
+                                                   size) if size < 8 else '{0}(this.{1}())'.format(get_read_method_name(size),
+                                                                                                   self._get_generated_getter_name(
+                                                                                                       attribute['name']))
+            lines = ['const {0}Bytes = {1}'.format(attribute['name'], method)]
+            lines += ['newArray = GeneratorUtils.concatTypedArrays(newArray, {0})'.format(attribute['name']+'Bytes')]
+            self._add_attribute_condition_if_needed(attribute, serialize_method, 'this.', lines, False, False)
 
     def _serialize_attribute_array(self, attribute, serialize_method):
         attribute_typename = attribute['type']
