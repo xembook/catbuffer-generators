@@ -1,11 +1,25 @@
 language: python
 python:
   - "3.6"
-
-install: pip install pycodestyle pylint pylint-quotes pyyaml
-
-script:
+addons:
+  apt:
+    packages:
+      - openjdk-8-jdk
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
+install: pip install pycodestyle pylint pylint-quotes pyyaml mako
+env:
+  matrix:
+    - SCRIPT="./scripts/generate_all.sh cpp_builder"
+    - SCRIPT="./scripts/generate_all.sh typescript"
+#    - SCRIPT="./scripts/generate_typescript.sh"
+before_script:
   - pylint --load-plugins pylint_quotes generators
   - pycodestyle --config=.pycodestyle .
-  - bash ./scripts/generate_all.sh cpp_builder
-  - bash ./scripts/generate_all.sh java
+script:
+  - bash $SCRIPT
