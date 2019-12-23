@@ -17,9 +17,10 @@ class TypescriptTransactionHelperGenerator():
     def _read_file(self):
         serialization_method = self._write_serialize_embedded_transaction_method()
         load_from_binary_method = self._write_load_from_binary_method()
-        self.class_output += self.imports
+        self.class_output += sorted(self.imports)
         self.class_output += ['']
-        line = ['export class {0} {{'.format(self.class_name)]
+        line = ['/** Helper class for embedded transaction serialization */']
+        line += ['export class {0} {{'.format(self.class_name)]
         line += ['']
         line += serialization_method
         line += ['']
@@ -30,29 +31,17 @@ class TypescriptTransactionHelperGenerator():
         self.class_output += line
 
     def _write_serialize_embedded_transaction_method(self):
-        line = [indent('public static serialize(transaction: EmbeddedTransactionBuilder): Uint8Array {')]
-        line += [indent('let byte: Uint8Array;', 2)]
-        line += [indent('let padding: Uint8Array;', 2)]
-        line += [indent('switch (transaction.type) {', 2)]
-        for name, value_comments in self.enum_list.items():
-            # pylint: disable=unused-variable
-            value, comments = value_comments
-            if (value != 0 and not name.upper().startswith('AGGREGATE')):
-                builder_class = 'Embedded{0}'.format(''.join([a.capitalize() for a in name.split('_')]))
-                self._add_import(builder_class)
-                line += [indent('case EntityTypeDto.{0}:'.format(name), 3)]
-                line += [indent('byte = (transaction as {0}).serialize();'.format(builder_class), 4)]
-                line += [indent('padding = new Uint8Array(GeneratorUtils.getTransactionPaddingSize(byte.length, 8));', 4)]
-                line += [indent('return GeneratorUtils.concatTypedArrays(byte, padding);', 4)]
-
-        line += [indent('default:', 3)]
-        line += [indent('throw new Error(`Transaction type: ${transaction.type} not recognized.`);', 4)]
-        line += [indent('}', 2)]
+        line = [indent('/** Serialize an embedded transaction */')]
+        line += [indent('public static serialize(transaction: EmbeddedTransactionBuilder): Uint8Array {')]
+        line += [indent('const byte = transaction.serialize();', 2)]
+        line += [indent('const padding = new Uint8Array(GeneratorUtils.getTransactionPaddingSize(byte.length, 8));', 2)]
+        line += [indent('return GeneratorUtils.concatTypedArrays(byte, padding);', 2)]
         line += [indent('}')]
         return line
 
     def _write_load_from_binary_method(self):
-        line = [indent('public static loadFromBinary(bytes: Uint8Array):EmbeddedTransactionBuilder {')]
+        line = [indent('/** Deserialize an embedded transaction from binary */')]
+        line += [indent('public static loadFromBinary(bytes: Uint8Array): EmbeddedTransactionBuilder {')]
         line += [indent('const header = EmbeddedTransactionBuilder.loadFromBinary(bytes);', 2)]
         line += [indent('switch (header.getType()) {', 2)]
         for name, value_comments in self.enum_list.items():
@@ -60,6 +49,7 @@ class TypescriptTransactionHelperGenerator():
             value, comments = value_comments
             if (value != 0 and not name.upper().startswith('AGGREGATE')):
                 builder_class = 'Embedded{0}'.format(''.join([a.capitalize() for a in name.split('_')]))
+                self._add_import(builder_class)
                 line += [indent('case EntityTypeDto.{0}:'.format(name), 3)]
                 line += [indent('return {0}.loadFromBinary(bytes);'.format(builder_class), 4)]
 
@@ -71,7 +61,8 @@ class TypescriptTransactionHelperGenerator():
 
     @classmethod
     def _write_size_getter(cls):
-        line = [indent('public static getEmbeddedTransactionSize(transactions: EmbeddedTransactionBuilder[]): number {')]
+        line = [indent('/** Get actual embedded transaction size */')]
+        line += [indent('public static getEmbeddedTransactionSize(transactions: EmbeddedTransactionBuilder[]): number {')]
         line += [indent('return transactions.map((o) => EmbeddedTransactionHelper.serialize(o).length).reduce((a, b) => a + b, 0);', 2)]
         line += [indent('}')]
         return line
