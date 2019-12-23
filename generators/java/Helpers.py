@@ -131,8 +131,8 @@ def get_attribute_kind(attribute):
 class TypeDescriptorDisposition(Enum):
     Inline = 'inline'
     Const = 'const'
-    Var = 'var'
     Fill = 'fill'
+    Var = 'var'
 
 
 def indent(code, n_indents=1):

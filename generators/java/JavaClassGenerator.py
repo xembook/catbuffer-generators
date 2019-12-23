@@ -585,10 +585,10 @@ class JavaClassGenerator(JavaGeneratorBase):
         self._recurse_foreach_attribute(name, callback, (param_list, condition_attribute), [])
         if not param_list:
             return ''
-        param_string = param_list[0]
+        param_value = param_list[0]
         for param in param_list[1:]:
-            param_string += ', {0}'.format(param)
-        return param_string
+            param_value += ', {0}'.format(param)
+        return param_value
 
     def _create_param_list(self, condition_attribute):
         return self._create_list(self.name, self._add_to_param, condition_attribute)
