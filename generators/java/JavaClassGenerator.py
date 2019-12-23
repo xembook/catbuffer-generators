@@ -417,10 +417,13 @@ class JavaClassGenerator(JavaGeneratorBase):
         load_attribute[attribute_kind](attribute, load_from_binary_method)
 
     def _serialize_attribute_simple(self, attribute, serialize_method):
-        size = get_attribute_size(self.schema, attribute)
-        reverse_byte_method = get_reverse_method_name(size).format('this.' + self._get_generated_getter_name(attribute['name'] + '()'))
-        line = 'dataOutputStream.{0}({1})'.format(get_write_method_name(size), reverse_byte_method)
-        self._add_attribute_condition_if_needed(attribute, serialize_method, 'this.', [line])
+        if self.name == 'Receipt' and attribute['name'] == 'size':
+            self._add_attribute_condition_if_needed(attribute, serialize_method, 'this.', [])
+        else:
+            size = get_attribute_size(self.schema, attribute)
+            reverse_byte_method = get_reverse_method_name(size).format('this.' + self._get_generated_getter_name(attribute['name'] + '()'))
+            line = 'dataOutputStream.{0}({1})'.format(get_write_method_name(size), reverse_byte_method)
+            self._add_attribute_condition_if_needed(attribute, serialize_method, 'this.', [line])
 
     def _serialize_attribute_buffer(self, attribute, serialize_method):
         attribute_name = attribute['name']
@@ -683,6 +686,8 @@ class JavaClassGenerator(JavaGeneratorBase):
         return ((name.startswith('Embedded') and not name.endswith('Header'))
                 or name.endswith('Transaction')
                 or name.startswith('Mosaic')
+                or name.endswith('Receipt')
+                or name.startswith('Receipt')
                 or name.endswith('Mosaic')
                 or name.endswith('Modification')
                 or (name.endswith('Body') and name != 'EntityBody')
