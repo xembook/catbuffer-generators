@@ -58,7 +58,7 @@ class JavaGeneratorBase(ABC):
 
     def _add_load_from_binary_method(self):
         load_from_binary_method = JavaMethodGenerator('public', self.generated_class_name, 'loadFromBinary',
-                                                      ['final DataInput stream'], '', True)
+                                                      ['final DataInputStream stream'], '', True)
         self._add_load_from_binary_custom(load_from_binary_method)
         self._add_method_documentation(load_from_binary_method, 'Creates an instance of {0} from a stream.'
                                        .format(self.generated_class_name), [('stream', 'Byte stream to use to serialize the object.')],
@@ -83,7 +83,7 @@ class JavaGeneratorBase(ABC):
         if line is not None:
             self.class_output += [line]
 
-        line = '' if self._is_body_class() else 'public '
+        line = 'public '
         line += 'final ' if self.finalized_class or self._is_body_class() else ''
         line += '{0} {1} '.format(
             self.class_type, self.generated_class_name)
@@ -102,6 +102,9 @@ class JavaGeneratorBase(ABC):
         self._calculate_size(new_getter)
         self._add_method_documentation(new_getter, 'Gets the size of the object.', [], 'Size in bytes.')
         self._add_method(new_getter)
+
+    def _add_body_getter(self):
+        pass
 
     @staticmethod
     def _add_method_documentation(method_writer, method_description, param_list, return_description):
@@ -144,6 +147,7 @@ class JavaGeneratorBase(ABC):
         self._add_private_declarations()
         self._add_public_declarations()
         self._add_size_getter()
+        self._add_body_getter()
         self._generate_interface_methods()
         self._add_load_from_binary_method()
         self._add_serialize_method()

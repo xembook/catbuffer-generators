@@ -33,7 +33,7 @@ class JavaFileGenerator:
                 self.code = [line.strip() for line in header]
 
     def set_import(self):
-        self.code += ['import java.io.DataInput;']
+        self.code += ['import java.io.DataInputStream;']
 
     def set_package(self):
         self.code += ['package io.nem.catapult.builders;'] + ['']
@@ -75,9 +75,9 @@ class JavaFileGenerator:
             yield self.code, enum_class.get_generated_name()
 
         # write all the  helper files
-        helper_files = ['BitMaskable', 'GeneratorUtils']
+        helper_files = ['BitMaskable', 'GeneratorUtils', 'TransactionBuilderFactory', 'Serializer', 'AggregateTransactionBodyBuilder']
         for filename in helper_files:
             self._init_class()
-            new_class = JavaStaticClassGenerator(filename)
+            new_class = JavaStaticClassGenerator(filename, self.schema)
             self.code += new_class.generate()
             yield self.code, filename

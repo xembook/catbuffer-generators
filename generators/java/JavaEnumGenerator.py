@@ -16,8 +16,9 @@ class JavaEnumGenerator(JavaGeneratorBase):
         super(JavaEnumGenerator, self).__init__(name, schema, class_schema)
         self.enum_values = {}
         self.class_type = 'enum'
+        self._is_flags = is_flags_enum(name)
 
-        if is_flags_enum(name):
+        if self._is_flags:
             self.implements_list.add(InterfaceType.BitMaskable)
 
         self._add_enum_values(self.class_schema)
@@ -94,22 +95,24 @@ class JavaEnumGenerator(JavaGeneratorBase):
         self._add_method_documentation(new_method, 'Gets enum value.', [('value', 'Raw value of the enum')], 'Enum value')
         self._add_method(new_method)
 
-    def _generate_bitmaskable_interface(self):
-        new_method = JavaMethodGenerator('public', 'long', 'getValue', [], '')
+    def _add_get_value_method(self, return_type):
+        new_method = JavaMethodGenerator('public', return_type, 'getValue', [], '')
         new_method.add_instructions(['return this.value'])
         self._add_method_documentation(new_method, 'Gets the value of the enum', [], 'Value of the enum.')
         self._add_method(new_method)
 
     def _generate_interface_methods(self):
         interface_generator = {
-            InterfaceType.BitMaskable: self._generate_bitmaskable_interface
+            InterfaceType.BitMaskable: self._add_get_value_method
         }
 
         for interfaceType in self.implements_list:
-            interface_generator[interfaceType]()
+            interface_generator[interfaceType]('long')
 
     def generate(self):
         self._add_class_definition()
         self._write_enum_values()
+        if not self._is_flags:
+            self._add_get_value_method(get_type(self.class_schema))
         self._generate_class_methods()
         return self.class_output

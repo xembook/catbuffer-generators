@@ -47,7 +47,7 @@ class JavaDefineTypeClassGenerator(JavaClassGenerator):
         self._add_method(new_setter)
 
     def _add_constructor_stream(self):
-        load_stream_constructor = JavaMethodGenerator('public', '', self.generated_class_name, ['final DataInput stream'], '')
+        load_stream_constructor = JavaMethodGenerator('public', '', self.generated_class_name, ['final DataInputStream stream'], '')
         self.wrap_code_in_try(load_stream_constructor,
                               lambda: self._generate_load_from_binary_attributes(self.class_schema, load_stream_constructor))
         self._add_method_documentation(load_stream_constructor, 'Constructor - Creates an object from stream.',
