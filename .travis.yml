@@ -16,7 +16,8 @@ install: pip install pycodestyle pylint pylint-quotes pyyaml mako
 env:
   matrix:
     - SCRIPT="./scripts/generate_all.sh cpp_builder"
-    - SCRIPT="./scripts/generate_typescript.sh"
+    - SCRIPT="./scripts/generate_all.sh typescript"
+#    - SCRIPT="./scripts/generate_typescript.sh"
 before_script:
   - pylint --load-plugins pylint_quotes generators
   - pycodestyle --config=.pycodestyle .
