@@ -30,7 +30,8 @@ class TypescriptTransactionHelperGenerator():
         line += ['}']
         self.class_output += line
 
-    def _write_serialize_embedded_transaction_method(self):
+    @classmethod
+    def _write_serialize_embedded_transaction_method(cls):
         line = [indent('/** Serialize an embedded transaction */')]
         line += [indent('public static serialize(transaction: EmbeddedTransactionBuilder): Uint8Array {')]
         line += [indent('const byte = transaction.serialize();', 2)]
