@@ -108,5 +108,5 @@ class TypescriptFileGenerator:
             fileNames.append(filename)
             yield self.code, filename
 
-        indexCode = map(lambda fileName: 'export * from \'./{0}\';'.format(fileName), list(dict.fromkeys(fileNames)))
+        indexCode = map('export * from \'./{0}\';'.format, list(dict.fromkeys(fileNames)))
         yield indexCode, 'index'
