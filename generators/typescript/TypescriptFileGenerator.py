@@ -65,7 +65,6 @@ class TypescriptFileGenerator:
             elif is_enum_type(attribute_type):
                 TypescriptFileGenerator.enum_class_list[type_descriptor] = TypescriptEnumGenerator(type_descriptor,
                                                                                                    self.schema, value)
-                fileNames.append(new_class.get_generated_name())
 
             elif is_struct_type(attribute_type):
                 if TypescriptClassGenerator.check_should_generate_class(type_descriptor):
@@ -108,5 +107,5 @@ class TypescriptFileGenerator:
             fileNames.append(filename)
             yield self.code, filename
 
-        indexCode = map('export * from \'./{0}\';'.format, list(set(fileNames)))
+        indexCode = map('export * from \'./{0}\';'.format, list(dict.fromkeys(fileNames)))
         yield indexCode, 'index'
