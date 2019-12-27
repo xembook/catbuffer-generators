@@ -805,8 +805,6 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
         self.load_from_binary_atrribute_list = self._reorder_condition_attribute_if_needed(self.load_from_binary_atrribute_list,
                                                                                            condition_attribute_list)
 
-
-
         self._add_method_documentation(constructor_method, 'Constructor.',
                                        self._create_name_comment_list(self.name, condition_attribute_list), None)
 
