@@ -805,6 +805,18 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
         self.load_from_binary_atrribute_list = self._reorder_condition_attribute_if_needed(self.load_from_binary_atrribute_list,
                                                                                            condition_attribute_list)
 
+
+
+        self._add_method_documentation(constructor_method, 'Constructor.',
+                                       self._create_name_comment_list(self.name, condition_attribute_list), None)
+
+        self._add_constructor_internal_conditional_assigments(constructor_method, condition_attribute_list)
+        self._add_method(constructor_method)
+
+    def _add_factory_method_(self):
+        self._add_factory_method_internal(None)
+
+    def _add_constructor_internal_conditional_assigments(self, constructor_method, condition_attribute_list):
         if condition_attribute_list:
             # constructor_method.add_instructions(self._init_attribute_condition_exception(condition_attribute_list), False)
             for condition_attribute in condition_attribute_list:
@@ -816,20 +828,16 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
                     condition_type_value = '{0}.{1}'.format(
                         get_generated_class_name(condition_type_attribute['type'], condition_type_attribute, self.schema),
                         create_enum_name(condition_attribute['condition_value']))
-
-                    constructor_method.add_instructions(['if ({0}) {{'.format(condition_attribute['name'])], False)
+                    if condition_attribute_list[0] == condition_attribute:
+                        constructor_method.add_instructions(['if ({0}) {{'.format(condition_attribute['name'])], False)
+                    elif condition_attribute_list[-1] != condition_attribute:
+                        constructor_method.add_instructions(['else if ({0}) {{'.format(condition_attribute['name'])], False)
+                    else:
+                        constructor_method.add_instructions(['else {'], False)
                     constructor_method.add_instructions([indent('this.{0} = {1}'.format(condition_attribute['condition'],
                                                                                         condition_type_value))])
                     constructor_method.add_instructions(['}'], False)
                     constructor_method.add_instructions([])
-
-        self._add_method_documentation(constructor_method, 'Constructor.',
-                                       self._create_name_comment_list(self.name, condition_attribute_list), None)
-
-        self._add_method(constructor_method)
-
-    def _add_factory_method(self):
-        self._add_factory_method_internal(None)
 
     def _add_factory_method_internal(self, condition_attribute):
         factory = TypescriptMethodGenerator('public', self.generated_class_name, 'create',

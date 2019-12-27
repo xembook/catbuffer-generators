@@ -79,7 +79,14 @@ class TypescriptFileGenerator:
             if type_descriptor == 'EntityType':
                 helper_class_name = 'EmbeddedTransactionHelper'
                 self._initialize_class()
-                new_class = TypescriptTransactionHelperGenerator(helper_class_name, enum_class.enum_values)
+                new_class = TypescriptTransactionHelperGenerator(helper_class_name, enum_class.enum_values, True)
+                self.code += new_class.generate()
+                yield self.code, helper_class_name
+
+            if type_descriptor == 'EntityType':
+                helper_class_name = 'TransactionHelper'
+                self._initialize_class()
+                new_class = TypescriptTransactionHelperGenerator(helper_class_name, enum_class.enum_values, False)
                 self.code += new_class.generate()
                 yield self.code, helper_class_name
 

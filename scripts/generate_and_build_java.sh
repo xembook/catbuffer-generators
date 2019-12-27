@@ -7,7 +7,6 @@ SNAPSHOT_PREFIX="-SNAPSHOT"
 artifactName="catbuffer"
 artifactVersion="2.0.1-SNAPSHOT"
 
-all=("all")
 rm -rf "${rootDir}/catbuffer/_generated/java"
 rm -rf "$rootDir/build/java/$artifactName"
 
