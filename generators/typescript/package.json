@@ -16,6 +16,8 @@
   "bugs": {
     "url": "https://github.com/nemtech/catbuffer-generators"
   },
+  "main": "builders/index.js",
+  "types": "builders/index.d.ts",
   "homepage": "https://github.com/nemtech/catbuffer-generators",
   "license": "Apache-2.0",
   "dependencies": {},

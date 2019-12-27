@@ -17,13 +17,13 @@
       "dom.iterable",
       "scripthost"
     ],
-    "outDir": "dist",
+    "outDir": "builders",
     "typeRoots": [
       "node_modules/@types"
     ]
   },
-  "exclude": [
-    "dist",
-    "node_modules"
-  ]
+  "include": [
+    "src"
+  ],
+  "exclude": []
 }

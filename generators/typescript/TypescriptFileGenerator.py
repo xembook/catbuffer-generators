@@ -50,22 +50,29 @@ class TypescriptFileGenerator:
         self.add_copyright(self.options['copyright'])
 
     def generate(self):
+        fileNames = []
         for type_descriptor, value in self.schema.items():
             self._initialize_class()
             self.set_import()
             attribute_type = value['type']
 
             if is_byte_type(attribute_type):
-                new_class = TypescriptDefineTypeClassGenerator(type_descriptor, self.schema, value, TypescriptFileGenerator.enum_class_list)
+                new_class = TypescriptDefineTypeClassGenerator(type_descriptor, self.schema, value,
+                                                               TypescriptFileGenerator.enum_class_list)
                 self.update_code(new_class)
+                fileNames.append(new_class.get_generated_name())
                 yield self.code, new_class.get_generated_name()
             elif is_enum_type(attribute_type):
-                TypescriptFileGenerator.enum_class_list[type_descriptor] = TypescriptEnumGenerator(type_descriptor, self.schema, value)
+                TypescriptFileGenerator.enum_class_list[type_descriptor] = TypescriptEnumGenerator(type_descriptor,
+                                                                                                   self.schema, value)
+                fileNames.append(new_class.get_generated_name())
 
             elif is_struct_type(attribute_type):
                 if TypescriptClassGenerator.check_should_generate_class(type_descriptor):
-                    new_class = TypescriptClassGenerator(type_descriptor, self.schema, value, TypescriptFileGenerator.enum_class_list)
+                    new_class = TypescriptClassGenerator(type_descriptor, self.schema, value,
+                                                         TypescriptFileGenerator.enum_class_list)
                     self.update_code(new_class)
+                    fileNames.append(new_class.get_generated_name())
                     yield self.code, new_class.get_generated_name()
 
         # write all the enum last just in case there are 'dynamic values'
@@ -81,6 +88,7 @@ class TypescriptFileGenerator:
                 self._initialize_class()
                 new_class = TypescriptTransactionHelperGenerator(helper_class_name, enum_class.enum_values, True)
                 self.code += new_class.generate()
+                fileNames.append(helper_class_name)
                 yield self.code, helper_class_name
 
             if type_descriptor == 'EntityType':
@@ -88,6 +96,7 @@ class TypescriptFileGenerator:
                 self._initialize_class()
                 new_class = TypescriptTransactionHelperGenerator(helper_class_name, enum_class.enum_values, False)
                 self.code += new_class.generate()
+                fileNames.append(helper_class_name)
                 yield self.code, helper_class_name
 
         # write all the  helper files
@@ -96,4 +105,8 @@ class TypescriptFileGenerator:
             self._initialize_class()
             new_class = TypescriptStaticClassGenerator(filename)
             self.code += new_class.generate()
+            fileNames.append(filename)
             yield self.code, filename
+
+        indexCode = map(lambda fileName: 'export * from \'./{0}\';'.format(fileName), list(dict.fromkeys(fileNames)))
+        yield indexCode, 'index'
