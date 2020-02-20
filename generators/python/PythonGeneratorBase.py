@@ -1,17 +1,15 @@
-# pylint: disable=too-few-public-methods
-import sys
-import logging
 from abc import ABC, abstractmethod
-# from .Helpers import get_generated_class_name, get_comments_from_attribute, indent, format_description
-from .Helpers import *
-from .PythonMethodGenerator import PythonMethodGenerator
+from generators.python.Helpers import get_generated_class_name, get_comments_from_attribute, indent, format_description, \
+    is_array, get_real_attribute_type, AttributeType, get_attribute_size, get_builtin_type, is_byte_type, format_import, \
+    CAT_TYPE, log
+from generators.python.PythonMethodGenerator import PythonMethodGenerator
 
 
 class PythonGeneratorBase(ABC):
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self, name, schema, class_schema):
-        logging.info(self.current_function_name(type(self).__name__))
+        log(type(self).__name__, '__init__')
         self.generated_class_name = get_generated_class_name(name, class_schema, schema)
         self.base_class_name = None
         self.name = name
@@ -124,7 +122,7 @@ class PythonGeneratorBase(ABC):
         method_generator.add_documentations(['"""'])
 
     def get_generated_type(self, schema, attribute, add_import=False):
-        typename = attribute[cat_type]
+        typename = attribute[CAT_TYPE]
         attribute_type = get_real_attribute_type(attribute)
         if attribute_type in (AttributeType.SIMPLE, AttributeType.SIZE_FIELD):
             return get_builtin_type(get_attribute_size(schema, attribute))
@@ -173,10 +171,3 @@ class PythonGeneratorBase(ABC):
         self._add_class_definition()
         self._generate_class_methods()
         return self.class_output
-
-    @classmethod
-    def current_function_name(cls, classname):
-        # module_name = "{:<35}".format(os.path.basename(sys._getframe().f_code.co_filename))
-        current_function_name = "{:<35}".format(sys._getframe(1).f_code.co_name)
-        caller_function_name = "{:<30}".format(sys._getframe(2).f_code.co_name)
-        return caller_function_name + "{:<32}".format(classname) + current_function_name

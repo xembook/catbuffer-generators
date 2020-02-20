@@ -1,6 +1,5 @@
 from typing import List
-from .Helpers import indent, underscore_prefix, cat_type
-import logging
+from generators.python.Helpers import indent, underscore_prefix
 
 
 class PythonMethodGenerator:
@@ -44,10 +43,6 @@ class PythonMethodGenerator:
 
         self.method_doc = []
         self.method_body = []
-
-    @staticmethod
-    def fix_shadows_builtin_names_warning(params: List) -> List:
-        return list(map(lambda x: x + '_' if x in [cat_type, 'id', 'hash'] else x, params))
 
     def decrement_indent(self):
         self._indent_num -= 1

@@ -1,15 +1,13 @@
-# pylint: disable=too-few-public-methods
-from .Helpers import AttributeType, get_real_attribute_type, get_comments_from_attribute
-from .PythonClassGenerator import PythonClassGenerator
-from .PythonMethodGenerator import PythonMethodGenerator
-import logging
+from generators.python.Helpers import AttributeType, get_real_attribute_type, get_comments_from_attribute, log
+from generators.python.PythonClassGenerator import PythonClassGenerator
+from generators.python.PythonMethodGenerator import PythonMethodGenerator
 
 
 class PythonDefineTypeClassGenerator(PythonClassGenerator):
     """Python define type class generator"""
 
     def __init__(self, name, schema, class_schema, enum_list):
-        logging.info(self.current_function_name('PythonDefineTypeClassGenerator'))
+        log(type(self).__name__, '__init__')
         class_schema['name'] = name[0].lower() + name[1:]
         super(PythonDefineTypeClassGenerator, self).__init__(name, schema, class_schema, enum_list)
         self.finalized_class = True

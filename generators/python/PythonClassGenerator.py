@@ -1,14 +1,10 @@
-from .Helpers import create_enum_name, get_default_value, get_comment_from_name
-from .Helpers import get_real_attribute_type, TypeDescriptorDisposition, get_attribute_if_size, \
-    get_byte_convert_method_name
-from .Helpers import get_generated_class_name, indent, get_attribute_size, is_fill_array
-from .Helpers import get_attribute_property_equal, AttributeType, is_byte_type, is_var_array
-from .Helpers import get_read_method_name, is_enum_type, is_reserved_field, is_array
-from .Helpers import get_comments_from_attribute, format_import, capitalize_first_character
-from .Helpers import cat_type
-from .PythonGeneratorBase import PythonGeneratorBase
-from .PythonMethodGenerator import PythonMethodGenerator
-import logging
+from generators.python.PythonGeneratorBase import PythonGeneratorBase
+from generators.python.PythonMethodGenerator import PythonMethodGenerator
+from generators.python.Helpers import create_enum_name, get_default_value, get_comment_from_name, \
+    get_real_attribute_type, TypeDescriptorDisposition, get_attribute_if_size, get_byte_convert_method_name, \
+    get_generated_class_name, indent, get_attribute_size, is_fill_array, get_attribute_property_equal, AttributeType, \
+    is_byte_type, is_var_array, get_read_method_name, is_enum_type, is_reserved_field, is_array, \
+    get_comments_from_attribute, format_import, capitalize_first_character, CAT_TYPE, log
 
 
 # pylint: disable=too-many-instance-attributes
@@ -16,7 +12,7 @@ class PythonClassGenerator(PythonGeneratorBase):
     """Python class generator"""
 
     def __init__(self, name, schema, class_schema, enum_list):
-        logging.info(self.current_function_name('PythonClassGenerator'))
+        log(type(self).__name__, '__init__')
         super(PythonClassGenerator, self).__init__(name, schema, class_schema)
         self.enum_list = enum_list
         self.class_type = 'class'
@@ -40,8 +36,8 @@ class PythonClassGenerator(PythonGeneratorBase):
         return 'disposition' in attribute and attribute['disposition'] == TypeDescriptorDisposition.Inline.value
 
     def _find_base_callback(self, attribute):
-        if self._is_inline_class(attribute) and self.check_should_generate_class(attribute[cat_type]):
-            self.base_class_name = attribute[cat_type]
+        if self._is_inline_class(attribute) and self.check_should_generate_class(attribute[CAT_TYPE]):
+            self.base_class_name = attribute[CAT_TYPE]
             self.finalized_class = True
             return True
         return False
@@ -82,15 +78,15 @@ class PythonClassGenerator(PythonGeneratorBase):
             ['return self.{0}'.format(attribute['name'])])
 
     # pylint: disable-msg=too-many-arguments
+    # noinspection PyUnusedLocal
     def _add_if_condition_for_variable_if_needed(self, attribute, code_writer, object_prefix,
                                                  if_condition, code_lines, add_var_declare=False, add_semicolon=False):
+        # pylint: disable=unused-argument
         condition_type_attribute = get_attribute_property_equal(self.schema, self.class_schema['layout'], 'name',
                                                                 attribute['condition'])
         condition_type = '{0}.{1}'.format(
-            get_generated_class_name(condition_type_attribute[cat_type], condition_type_attribute, self.schema),
+            get_generated_class_name(condition_type_attribute[CAT_TYPE], condition_type_attribute, self.schema),
             create_enum_name(attribute['condition_value']))
-        if object_prefix == 'self.':
-            object_prefix = object_prefix  # + '_'
         code_writer.add_instructions(
             ['if {0}{1} {2} {3}:'.format(object_prefix, attribute['condition'], if_condition, condition_type)])
 
@@ -101,7 +97,7 @@ class PythonClassGenerator(PythonGeneratorBase):
                                                              if_condition, add_var_declare=False, add_semicolon=False):
         condition_type_attribute = get_attribute_property_equal(self.schema, self.class_schema['layout'], 'name',
                                                                 attribute['condition'])
-        condition_type_class_name = get_generated_class_name(condition_type_attribute[cat_type], condition_type_attribute,
+        condition_type_class_name = get_generated_class_name(condition_type_attribute[CAT_TYPE], condition_type_attribute,
                                                              self.schema)
         condition_type = '{0}.{1}'.format(condition_type_class_name, create_enum_name(attribute['condition_value']))
         self._add_load_from_binary_condition_not_declared(attribute, code_writer, add_semicolon)
@@ -113,7 +109,7 @@ class PythonClassGenerator(PythonGeneratorBase):
             self._load_from_binary_condition_lines += ['{0} = None  # {1}'.format(attribute_name, attribute_type)]
         self._load_from_binary_condition_lines += ['if {0}{1} {2} {3}:'.format(
             object_prefix, condition_name_part, if_condition, condition_type)]
-        class_name = get_generated_class_name(attribute[cat_type], attribute, self.schema)
+        class_name = get_generated_class_name(attribute[CAT_TYPE], attribute, self.schema)
         self._load_from_binary_condition_lines += [indent('{2}{0} = {1}.loadFromBinary({3})'.format(
             attribute_name, class_name, '', condition_name_part + 'ConditionBytes'))]
 
@@ -149,7 +145,6 @@ class PythonClassGenerator(PythonGeneratorBase):
                 AttributeType.ARRAY: self._add_simple_getter,
                 AttributeType.CUSTOM: self._add_simple_getter,
                 AttributeType.FLAGS: self._add_simple_getter,
-                AttributeType.FLAGS: self._add_simple_getter,
                 AttributeType.FILL_ARRAY: self._add_simple_getter,
                 AttributeType.VAR_ARRAY: self._add_simple_getter
             }
@@ -165,17 +160,17 @@ class PythonClassGenerator(PythonGeneratorBase):
     @staticmethod
     def _add_simple_setter(attribute, setter):
         attribute_name = attribute['name']
-        setter.add_instructions(['self.{0} = {1}'.format(attribute_name, attribute_name)])
+        setter.add_instructions(['self.{0} = {0}'.format(attribute_name)])
 
     @staticmethod
     def _add_array_setter(attribute, setter):
         attribute_name = attribute['name']
-        setter.add_instructions(['self.{0} = {1}'.format(attribute_name, attribute_name)])
+        setter.add_instructions(['self.{0} = {0}'.format(attribute_name)])
 
     @staticmethod
     def _add_buffer_setter(attribute, setter):
         attribute_name = attribute['name']
-        setter.add_instructions(['self.{0} = {1}'.format(attribute_name, attribute_name)])
+        setter.add_instructions(['self.{0} = {0}'.format(attribute_name)])
 
     @staticmethod
     def _init_attribute_condition_exception(condition_attribute_list):
@@ -213,7 +208,7 @@ class PythonClassGenerator(PythonGeneratorBase):
     def _is_attribute_conditional(attribute, condition_attribute_list):
         if condition_attribute_list:
             for condition in condition_attribute_list:
-                if attribute['name'] == condition['name'] and attribute[cat_type] == condition[cat_type]:
+                if attribute['name'] == condition['name'] and attribute[CAT_TYPE] == condition[CAT_TYPE]:
                     return True
         return False
 
@@ -245,10 +240,10 @@ class PythonClassGenerator(PythonGeneratorBase):
             line += 'len(self.{0})'.format(attribute_name)
         elif attribute_kind in (AttributeType.ARRAY, AttributeType.VAR_ARRAY, AttributeType.FILL_ARRAY):
             line = ''
-            if attribute[cat_type] == 'EntityType':
+            if attribute[CAT_TYPE] == 'EntityType':
                 lines += ['for x in self.{0}:'.format(attribute_name)]
                 lines += [indent('size += 2')]
-            elif attribute[cat_type] == 'EmbeddedTransaction':
+            elif attribute[CAT_TYPE] == 'EmbeddedTransaction':
                 lines += ['for x in self.{0}:'.format(attribute_name)]
                 lines += [indent('size += len(EmbeddedTransactionHelper.serialize(x))')]
             else:
@@ -265,8 +260,8 @@ class PythonClassGenerator(PythonGeneratorBase):
     def _get_custom_attribute_size_getter(self, attribute):
         attribute_name = attribute['name']
         for type_descriptor, value in self.schema.items():
-            attribute_type = value[cat_type]
-            if is_enum_type(attribute_type) and type_descriptor == attribute[cat_type]:
+            attribute_type = value[CAT_TYPE]
+            if is_enum_type(attribute_type) and type_descriptor == attribute[CAT_TYPE]:
                 return '{0}  # {1}'.format(value['size'], attribute_name)
         return 'self.{0}.getSize()'.format(attribute_name)
 
@@ -295,7 +290,7 @@ class PythonClassGenerator(PythonGeneratorBase):
                 attribute_val['aggregate_class'] = class_name
 
             if 'disposition' in attribute_val:
-                inline_class_type = attribute_val[cat_type]
+                inline_class_type = attribute_val[CAT_TYPE]
                 if attribute_val['disposition'] == TypeDescriptorDisposition.Inline.value:
                     if self.check_should_generate_class(inline_class_type):
                         # Class was generated so it can be declare aggregate
@@ -310,7 +305,7 @@ class PythonClassGenerator(PythonGeneratorBase):
                     self._recursive_attribute_iterator(inline_class_type, callback, context, ignore_inline_class)
                 elif attribute_val['disposition'] == TypeDescriptorDisposition.Const.value:
                     # add dynamic enum if present in this class
-                    enum_name_value = attribute_val[cat_type]
+                    enum_name_value = attribute_val[CAT_TYPE]
                     if enum_name_value in self.enum_list:
                         self.enum_list[enum_name_value].add_enum_value(
                             self.generated_class_name, attribute_val['value'],
@@ -372,7 +367,7 @@ class PythonClassGenerator(PythonGeneratorBase):
 
     def _load_from_binary_array(self, attribute, load_from_binary_method):
         load_from_binary_method.add_instructions(['# gen: _load_from_binary_array'])
-        attribute_typename = attribute[cat_type]
+        attribute_typename = attribute[CAT_TYPE]
         attribute_sizename = attribute['size']
         attribute_name = attribute['name']
         var_type = self.get_generated_type(self.schema, attribute)
@@ -405,9 +400,9 @@ class PythonClassGenerator(PythonGeneratorBase):
         is_custom_type_enum = False
         custom_enum_size = 0
         for type_descriptor, value in self.schema.items():
-            enum_attribute_type = value[cat_type]
+            enum_attribute_type = value[CAT_TYPE]
             enum_attribute_name = type_descriptor
-            if is_enum_type(enum_attribute_type) and enum_attribute_name == attribute[cat_type]:
+            if is_enum_type(enum_attribute_type) and enum_attribute_name == attribute[CAT_TYPE]:
                 is_custom_type_enum = True
                 custom_enum_size = value['size']
         attribute_name = attribute['name']
@@ -417,7 +412,7 @@ class PythonClassGenerator(PythonGeneratorBase):
             lines += ['{2}{0} = {1}'.format(attribute_name, enum_method, '')]
             lines += ['bytes_ = bytes_[{0}:]'.format(custom_enum_size)]
         else:
-            class_name = get_generated_class_name(attribute[cat_type], attribute, self.schema)
+            class_name = get_generated_class_name(attribute[CAT_TYPE], attribute, self.schema)
             lines += ['{2}{0} = {1}.loadFromBinary(bytes_)'.format(attribute_name, class_name, '')]
             lines += ['bytes_ = bytes_[{0}.getSize():]'.format(attribute_name)]
         self._add_attribute_condition_if_needed(attribute, load_from_binary_method, '', lines, True, True)
@@ -443,7 +438,7 @@ class PythonClassGenerator(PythonGeneratorBase):
 
     def _load_from_binary_var_fill_array(self, attribute, load_from_binary_method):
         load_from_binary_method.add_instructions(['# gen: _load_from_binary_var_fill_array'])
-        attribute_typename = attribute[cat_type]
+        attribute_typename = attribute[CAT_TYPE]
         attribute_sizename = attribute['size']
         if attribute_sizename == 0:
             attribute_sizename = 'len(bytes_)'
@@ -506,7 +501,7 @@ class PythonClassGenerator(PythonGeneratorBase):
             self._add_attribute_condition_if_needed(attribute, serialize_method, 'self.', lines, False, False)
 
     def _serialize_attribute_array(self, attribute, serialize_method):
-        attribute_typename = attribute[cat_type]
+        attribute_typename = attribute[CAT_TYPE]
         attribute_name = attribute['name']
         serialize_method.add_instructions(['for item in self.{0}:'.format(attribute_name)], False)
 
@@ -535,9 +530,9 @@ class PythonClassGenerator(PythonGeneratorBase):
         is_custom_type_enum = False
         custom_enum_size = 0
         for type_descriptor, value in self.schema.items():
-            enum_attribute_type = value[cat_type]
+            enum_attribute_type = value[CAT_TYPE]
             enum_attribute_name = type_descriptor
-            if is_enum_type(enum_attribute_type) and enum_attribute_name == attribute[cat_type]:
+            if is_enum_type(enum_attribute_type) and enum_attribute_name == attribute[CAT_TYPE]:
                 is_custom_type_enum = True
                 custom_enum_size = value['size']
         if is_custom_type_enum and custom_enum_size > 0:
@@ -602,7 +597,7 @@ class PythonClassGenerator(PythonGeneratorBase):
             return 'self.{0}.stream().mapToInt(o -> o.getSize()).sum()'.format(attribute_name)
         if kind == AttributeType.FLAGS:
             return '{0}.values()[0].getSize()  # {1}'.format(
-                get_generated_class_name(attribute[cat_type], attribute, self.schema),
+                get_generated_class_name(attribute[CAT_TYPE], attribute, self.schema),
                 attribute_name)
         if kind == AttributeType.SIZE_FIELD:
             return '{0}  # {1}'.format(attribute['size'], attribute_name)
@@ -728,15 +723,15 @@ class PythonClassGenerator(PythonGeneratorBase):
     def _get_inline_method_factory(self, variable, condition_attribute_list):
         if condition_attribute_list:
             condition_vars = list(map(lambda x: x['name'], condition_attribute_list))
-            var_list = [x for x in self._create_list(variable[cat_type], self._add_to_variable_list,
+            var_list = [x for x in self._create_list(variable[CAT_TYPE], self._add_to_variable_list,
                                                      condition_attribute_list).split(', ') if x not in condition_vars]
             var_list.extend(condition_vars)
             return 'self.{0} = {1}({2})'.format(variable['name'],
-                                                get_generated_class_name(variable[cat_type], variable, self.schema),
+                                                get_generated_class_name(variable[CAT_TYPE], variable, self.schema),
                                                 ', '.join(var_list))
         return 'self.{0} = {1}({2})'.format(variable['name'],
-                                            get_generated_class_name(variable[cat_type], variable, self.schema),
-                                            self._create_list(variable[cat_type], self._add_to_variable_list,
+                                            get_generated_class_name(variable[CAT_TYPE], variable, self.schema),
+                                            self._create_list(variable[CAT_TYPE], self._add_to_variable_list,
                                                               condition_attribute_list))
 
     def _add_constructor_internal(self, condition_attribute_list):
@@ -760,7 +755,7 @@ class PythonClassGenerator(PythonGeneratorBase):
 
         for variable in object_attributes:
             attribute_name = variable['name']
-            variable_type = variable[cat_type]
+            variable_type = variable[CAT_TYPE]
             if self._should_declaration(variable):
                 if self._is_inline_class(variable):
                     constructor_method.add_instructions(
@@ -799,11 +794,11 @@ class PythonClassGenerator(PythonGeneratorBase):
                                                                         'name',
                                                                         condition_attribute['condition'], False)
                 if condition_type_attribute:
-                    self._add_required_import(format_import(get_generated_class_name(condition_type_attribute[cat_type],
+                    self._add_required_import(format_import(get_generated_class_name(condition_type_attribute[CAT_TYPE],
                                                                                      condition_type_attribute,
                                                                                      self.schema)))
                     condition_type_value = '{0}.{1}'.format(
-                        get_generated_class_name(condition_type_attribute[cat_type], condition_type_attribute,
+                        get_generated_class_name(condition_type_attribute[CAT_TYPE], condition_type_attribute,
                                                  self.schema),
                         create_enum_name(condition_attribute['condition_value']))
                     if condition_attribute_list[0] == condition_attribute:

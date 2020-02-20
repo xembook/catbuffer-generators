@@ -1,4 +1,4 @@
-from .Helpers import indent, name_value_suffix
+from generators.python.Helpers import indent, NAME_VALUE_SUFFIX
 
 
 # pylint: disable=too-few-public-methods
@@ -58,7 +58,7 @@ class PythonTransactionHelperGenerator:
             line += [indent('"""Deserialize a transaction from binary"""', 2)]
             line += [indent('header = TransactionBuilder.loadFromBinary(payload)', 2)]
 
-        line += [indent('entityType = header.getType' + name_value_suffix + '()', 2)]
+        line += [indent('entityType = header.getType' + NAME_VALUE_SUFFIX + '()', 2)]
         if_clause = 'if'
         for name, value_comments in self.enum_list.items():
             # pylint: disable=unused-variable
@@ -74,7 +74,7 @@ class PythonTransactionHelperGenerator:
                 line += [indent('return {0}.loadFromBinary(payload)'.format(builder_class), 3)]
                 if_clause = 'elif'
         line += [indent('else:', 2)]
-        line += [indent("raise Exception('Transaction type: {0} not recognized.'.format(entityType))", 3)]
+        line += [indent('raise Exception(\'Transaction type: {0} not recognized.\'.format(entityType))', 3)]
         return line
 
     @classmethod
@@ -82,7 +82,9 @@ class PythonTransactionHelperGenerator:
         line = [indent('@classmethod')]
         line += [indent('def getEmbeddedTransactionSize(cls, transactions: List[EmbeddedTransactionBuilder]) -> int:')]
         line += [indent('"""Get actual embedded transaction size"""', 2)]
-        line += [indent('return reduce(lambda a, b: a + b, map(lambda x: len(EmbeddedTransactionHelper.serialize(x)), transactions), 0)', 2)]
+        line += [indent(
+            'return reduce(lambda a, b: a + b, map(lambda x: len(EmbeddedTransactionHelper.serialize(x)), transactions), 0)',
+            2)]
         return line
 
     def _add_import(self, name):

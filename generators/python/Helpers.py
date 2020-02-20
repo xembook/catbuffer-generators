@@ -1,11 +1,12 @@
 from enum import Enum
 import re
-from typing import List, Dict
+from typing import List
+import logging
 
 
-name_value_suffix = '_'
-type_suffix = ''
-cat_type = 'type' + type_suffix
+NAME_VALUE_SUFFIX = '_'
+TYPE_SUFFIX = ''
+CAT_TYPE = 'type' + TYPE_SUFFIX
 
 
 class TypeDescriptorType(Enum):
@@ -39,22 +40,6 @@ class AttributeType(Enum):
 def indent(code, n_indents=1):
     indented = ' ' * 4 * n_indents + code
     return indented
-
-
-"""
-def get_attribute_name(attribute: Dict) -> str:
-    return fix_shadows_builtin_name(attribute['name'])
-
-
-def get_attribute_name(name: str) -> str:
-    return fix_shadows_builtin_name(name)
-
-
-def fix_shadows_builtin_name(name: str) -> str:
-    if name in [cat_type, 'id', 'hash']:
-        name = name + '_'
-    return name
-"""
 
 
 def is_builtin_type(typename, size):
@@ -116,7 +101,7 @@ def get_attribute_property_equal(schema, attribute_list, attribute_name, attribu
             return current_attribute
         if (recurse and 'disposition' in current_attribute and
                 current_attribute['disposition'] == TypeDescriptorDisposition.Inline.value):
-            value = get_attribute_property_equal(schema, schema[current_attribute[cat_type]]['layout'], attribute_name,
+            value = get_attribute_property_equal(schema, schema[current_attribute[CAT_TYPE]]['layout'], attribute_name,
                                                  attribute_value)
             if value is not None:
                 return value
@@ -148,23 +133,6 @@ def get_byte_convert_method_name(size):
     else:
         method_name = 'GeneratorUtils.bufferToUint({0})'
     return method_name
-
-
-"""def get_generated_type(schema, attribute):
-    typename = attribute[cat_type]
-    attribute_type = get_real_attribute_type(attribute)
-    if attribute_type in (AttributeType.SIMPLE, AttributeType.SIZE_FIELD):
-        return [get_builtin_type(get_attribute_size(schema, attribute))]
-    if attribute_type == AttributeType.BUFFER:
-        return 'bytes'
-    if not is_byte_type(typename):
-        typename = get_generated_class_name(typename, attribute, schema)
-    if is_array(attribute_type):
-        return 'List[{0}]'.format(typename if typename != 'EntityTypeDto' else 'int')
-    if attribute_type == AttributeType.FLAGS:
-        return 'int'
-
-    return typename"""
 
 
 def get_comment_from_name(name):
@@ -214,17 +182,17 @@ def format_import(attribute_type):
 
 
 def get_generated_class_name(typename, class_schema, schema):
-    class_type_name = class_schema[cat_type]
+    class_type_name = class_schema[CAT_TYPE]
     default_name = typename + 'Dto'
     if is_byte_type(class_type_name) or is_enum_type(class_type_name) or typename not in schema:
         return default_name
-    return typename + 'Builder' if is_struct_type(schema[typename][cat_type]) else default_name
+    return typename + 'Builder' if is_struct_type(schema[typename][CAT_TYPE]) else default_name
 
 
 def get_attribute_size(schema, attribute_value):
-    if 'size' not in attribute_value and not is_byte_type(attribute_value[cat_type]) and not is_enum_type(
-            attribute_value[cat_type]):
-        attr = schema[attribute_value[cat_type]]
+    if 'size' not in attribute_value and not is_byte_type(attribute_value[CAT_TYPE]) and not is_enum_type(
+            attribute_value[CAT_TYPE]):
+        attr = schema[attribute_value[CAT_TYPE]]
         if 'size' in attr:
             return attr['size']
         return 1
@@ -237,7 +205,7 @@ def get_real_attribute_type(attribute):
     if real_type != AttributeType.UNKNOWN:
         return real_type
 
-    attribute_type = attribute[cat_type]
+    attribute_type = attribute[CAT_TYPE]
 
     real_type = get_type_by_attribute_type(attribute, attribute_type)
     if real_type != AttributeType.UNKNOWN:
@@ -308,10 +276,14 @@ def camel_to_snake(name: str) -> str:
 
 
 def camel_to_snake_list(names: List) -> List:
-    return list(map(lambda name: camel_to_snake(name), names))
+    return list(map(camel_to_snake, names))
 
 
 def add_blank_lines(text: str, num_of_lines=1) -> str:
-    for x in range(0, num_of_lines):
+    for _ in range(0, num_of_lines):
         text = [''] + text
     return text
+
+
+def log(classname, function_name, text=''):
+    logging.info('%s', '{:<30}'.format(classname) + '{:<27}'.format(function_name) + text)

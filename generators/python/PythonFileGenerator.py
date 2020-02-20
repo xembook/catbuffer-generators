@@ -1,15 +1,14 @@
 import os
-import sys
 import logging
 from datetime import datetime
 from generators.Descriptor import Descriptor
-from .Helpers import is_byte_type, is_enum_type, is_struct_type, add_blank_lines
-from .Helpers import cat_type, type_suffix, name_value_suffix
-from .PythonClassGenerator import PythonClassGenerator
-from .PythonDefineTypeClassGenerator import PythonDefineTypeClassGenerator
-from .PythonEnumGenerator import PythonEnumGenerator
-from .PythonStaticClassGenerator import PythonStaticClassGenerator
-from .PythonTransactionHelperGenerator import PythonTransactionHelperGenerator
+from generators.python.PythonClassGenerator import PythonClassGenerator
+from generators.python.PythonDefineTypeClassGenerator import PythonDefineTypeClassGenerator
+from generators.python.PythonEnumGenerator import PythonEnumGenerator
+from generators.python.PythonStaticClassGenerator import PythonStaticClassGenerator
+from generators.python.PythonTransactionHelperGenerator import PythonTransactionHelperGenerator
+from generators.python.Helpers import is_byte_type, is_enum_type, is_struct_type, add_blank_lines, CAT_TYPE, \
+    TYPE_SUFFIX, NAME_VALUE_SUFFIX, log
 
 
 def update_key(dict0, old_key, new_key):
@@ -45,17 +44,9 @@ class PythonFileGenerator:
             pass
         logging.basicConfig(filename='PythonGenerator.log', level=logging.INFO)
 
-    @classmethod
-    def current_function_name(cls, classname):
-        # module_name = "{:<35}".format(os.path.basename(sys._getframe().f_code.co_filename))
-        current_function_name = "{:<27}".format(sys._getframe(1).f_code.co_name)
-        caller_function_name = "{:<30}".format(sys._getframe(2).f_code.co_name)
-        return caller_function_name + "{:<30}".format(classname) + current_function_name
-
     def __init__(self, schema, options):
         self.config_logging()
-        logging.info(self.current_function_name('PythonFileGenerator')
-                     + '*** START *** ' + datetime.now().strftime("%H:%M:%S %d-%b-%Y") + ' ***')
+        log(type(self).__name__, '__init__', '*** START *** ' + datetime.now().strftime('%H:%M:%S %d-%b-%Y') + ' ***')
         self.current = None
         self.schema = schema
         self.options = options
@@ -100,16 +91,16 @@ class PythonFileGenerator:
     def _fix_shadows_builtin_name_warnings(self):
         for type_descriptor, value in self.schema.items():
             old_value = value
-            value = append_suffix_to_key(value, 'type', type_suffix)
-            value = append_suffix_to_value(value, 'name', 'type', name_value_suffix)
-            value = append_suffix_to_value(value, 'name', 'id', name_value_suffix)
-            value = append_suffix_to_value(value, 'name', 'hash', name_value_suffix)
+            value = append_suffix_to_key(value, 'type', TYPE_SUFFIX)
+            value = append_suffix_to_value(value, 'name', 'type', NAME_VALUE_SUFFIX)
+            value = append_suffix_to_value(value, 'name', 'id', NAME_VALUE_SUFFIX)
+            value = append_suffix_to_value(value, 'name', 'hash', NAME_VALUE_SUFFIX)
             if 'layout' in value:
                 for layout_dict in value.get('layout'):
-                    layout_dict = append_suffix_to_key(layout_dict, 'type', type_suffix)
-                    layout_dict = append_suffix_to_value(layout_dict, 'name', 'type', name_value_suffix)
-                    layout_dict = append_suffix_to_value(layout_dict, 'name', 'id', name_value_suffix)
-                    layout_dict = append_suffix_to_value(layout_dict, 'name', 'hash', name_value_suffix)
+                    layout_dict = append_suffix_to_key(layout_dict, 'type', TYPE_SUFFIX)
+                    layout_dict = append_suffix_to_value(layout_dict, 'name', 'type', NAME_VALUE_SUFFIX)
+                    layout_dict = append_suffix_to_value(layout_dict, 'name', 'id', NAME_VALUE_SUFFIX)
+                    append_suffix_to_value(layout_dict, 'name', 'hash', NAME_VALUE_SUFFIX)
             self.schema = update_value(self.schema, type_descriptor, old_value, value)
 
     def generate(self):
@@ -120,10 +111,10 @@ class PythonFileGenerator:
         for type_descriptor, value in self.schema.items():
             self._init_class()
             self.set_import()
-            attribute_type = value[cat_type]
+            attribute_type = value[CAT_TYPE]
 
-            logging.info(self.current_function_name('PythonFileGenerator')
-                         + "{:<10}".format(type_descriptor + ' value:' + str(value)))
+            log(type(self).__name__, 'generate',
+                '{:<10}'.format(type_descriptor + ' value:' + str(value)))
 
             if is_byte_type(attribute_type):
                 new_class = PythonDefineTypeClassGenerator(type_descriptor, self.schema, value,
@@ -176,5 +167,4 @@ class PythonFileGenerator:
             filenames.append(filename)
             yield self.code, filename
 
-        logging.info(self.current_function_name('PythonFileGenerator')
-                     + '*** END *** ' + datetime.now().strftime("%H:%M:%S %d-%b-%Y") + ' ***')
+        log(type(self).__name__, 'generate', '*** END *** ' + datetime.now().strftime('%H:%M:%S %d-%b-%Y') + ' ***')
