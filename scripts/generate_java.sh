@@ -4,8 +4,8 @@ set -e
 rootDir="$(dirname $0)/.."
 
 SNAPSHOT_PREFIX="-SNAPSHOT"
-artifactName="catbuffer"
-artifactVersion="2.0.1-SNAPSHOT"
+artifactName="catbuffer-java"
+artifactVersion="2.0.2-SNAPSHOT"
 
 rm -rf "${rootDir}/catbuffer/_generated/java"
 rm -rf "$rootDir/build/java/$artifactName"
