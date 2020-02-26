@@ -218,14 +218,15 @@ class PythonClassGenerator(PythonGeneratorBase):
         return 'create' + capitalize_first_character(condition_value)
 
     @staticmethod
-    def check_should_generate_class(name):
+    def check_should_generate_class(name: str):
         return ((name.startswith('Embedded') and not name.endswith('Header'))
                 or name.startswith('Mosaic')
                 or name.startswith('Block')
                 or name.endswith('Transaction')
                 or name.endswith('Mosaic')
                 or (name.endswith('Body') and name != 'EntityBody')
-                or name.endswith('Receipt')
+                or (name.find('Receipt') != -1)
+                or (name.find('Resolution') != -1)
                 or name.endswith('Modification')
                 or name.endswith('Cosignature'))
 
