@@ -95,12 +95,18 @@ class PythonFileGenerator:
             value = append_suffix_to_value(value, 'name', 'type', NAME_VALUE_SUFFIX)
             value = append_suffix_to_value(value, 'name', 'id', NAME_VALUE_SUFFIX)
             value = append_suffix_to_value(value, 'name', 'hash', NAME_VALUE_SUFFIX)
+            # Name with 'Size' or 'Count' suffix specify the length or size of a list (array) but this one below is an exception
+            # so we suffix it to prevent it from being treated as such by this generator.
+            value = append_suffix_to_value(value, 'name', 'beneficiaryCount', NAME_VALUE_SUFFIX)
             if 'layout' in value:
                 for layout_dict in value.get('layout'):
                     layout_dict = append_suffix_to_key(layout_dict, 'type', TYPE_SUFFIX)
                     layout_dict = append_suffix_to_value(layout_dict, 'name', 'type', NAME_VALUE_SUFFIX)
                     layout_dict = append_suffix_to_value(layout_dict, 'name', 'id', NAME_VALUE_SUFFIX)
-                    append_suffix_to_value(layout_dict, 'name', 'hash', NAME_VALUE_SUFFIX)
+                    layout_dict = append_suffix_to_value(layout_dict, 'name', 'hash', NAME_VALUE_SUFFIX)
+                    # Name with 'Size' or 'Count' suffix specify the length or size of a list (array) but this one below is an exception
+                    # so we suffix it to prevent it from being treated as such by this generator.
+                    append_suffix_to_value(layout_dict, 'name', 'beneficiaryCount', NAME_VALUE_SUFFIX)
             self.schema = update_value(self.schema, type_descriptor, old_value, value)
 
     def generate(self):

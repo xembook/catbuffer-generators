@@ -219,16 +219,10 @@ class PythonClassGenerator(PythonGeneratorBase):
 
     @staticmethod
     def check_should_generate_class(name: str):
-        return ((name.startswith('Embedded') and not name.endswith('Header'))
-                or name.startswith('Mosaic')
-                or name.startswith('Block')
-                or name.endswith('Transaction')
-                or name.endswith('Mosaic')
-                or (name.endswith('Body') and name != 'EntityBody')
-                or (name.find('Receipt') != -1)
-                or (name.find('Resolution') != -1)
-                or name.endswith('Modification')
-                or name.endswith('Cosignature'))
+        # return name not in ['EmbeddedTransactionHeader', 'EntityBody', 'SizePrefixedEntity', 'VerifiableEntity']
+        return not ((name.startswith('Embedded') and name.endswith('Header'))
+                    or (name == 'EntityBody')
+                    or name.endswith('Entity'))
 
     def _add_size_values(self, attribute, method_writer):
         attribute_kind = get_real_attribute_type(attribute)
