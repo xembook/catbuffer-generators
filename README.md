@@ -10,4 +10,5 @@ Read the [installation instructions here](https://github.com/nemtech/catbuffer).
 
 - C++
 - Java
-- Javascript
+- TypeScript/JavaScript
+- Python
