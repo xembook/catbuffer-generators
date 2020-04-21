@@ -6,8 +6,6 @@
     "type": "git",
     "url": "git+https://github.com/nemtech/catbuffer-generators.git"
   },
-  "main": "dist/api.js",
-  "types": "dist/api.d.ts",
   "scripts": {
     "clean": "rm -Rf node_modules/ *.js",
     "build": "tsc",
@@ -16,8 +14,8 @@
   "bugs": {
     "url": "https://github.com/nemtech/catbuffer-generators"
   },
-  "main": "builders/index.js",
-  "types": "builders/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "homepage": "https://github.com/nemtech/catbuffer-generators",
   "license": "Apache-2.0",
   "dependencies": {},

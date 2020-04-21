@@ -20,7 +20,7 @@
       "dom.iterable",
       "scripthost"
     ],
-    "outDir": "builders",
+    "outDir": "dist",
     "typeRoots": [
       "node_modules/@types"
     ]

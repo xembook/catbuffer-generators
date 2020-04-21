@@ -5,7 +5,7 @@ rootDir="$(dirname $0)/.."
 
 SNAPSHOT_PREFIX="-SNAPSHOT"
 artifactName="catbuffer"
-artifactVersion="0.0.5-SNAPSHOT"
+artifactVersion="0.0.7-SNAPSHOT"
 
 rm -rf "${rootDir}/catbuffer/_generated/typescript"
 rm -rf "$rootDir/build/typescript/$artifactName"
