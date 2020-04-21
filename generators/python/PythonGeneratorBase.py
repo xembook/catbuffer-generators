@@ -18,7 +18,8 @@ class PythonGeneratorBase(ABC):
         self.privates = []
         self.class_type = None
         self.class_schema = class_schema
-        self.required_import = set()
+        self.standard_lib_imports = set()
+        self.app_lib_imports = set()
         self.implements_list = set()
         self.finalized_class = False
 
@@ -92,7 +93,7 @@ class PythonGeneratorBase(ABC):
         class_header = '{0} {1}'.format(self.class_type, self.generated_class_name)
         if self.base_class_name is not None:
             classname = get_generated_class_name(self.base_class_name, self.schema[self.base_class_name], self.schema)
-            self._add_required_import('from .{0} import {0}'.format(classname))
+            self._add_app_lib_import(format_import(classname))
             class_header += '({0})'.format(classname)
         class_header += ':'
         self.class_output += [class_header]
@@ -122,32 +123,42 @@ class PythonGeneratorBase(ABC):
         method_generator.add_documentations(['"""'])
 
     def get_generated_type(self, schema, attribute, add_import=False):
-        typename = attribute[CAT_TYPE]
         attribute_type = get_real_attribute_type(attribute)
         if attribute_type in (AttributeType.SIMPLE, AttributeType.SIZE_FIELD):
             return get_builtin_type(get_attribute_size(schema, attribute))
         if attribute_type == AttributeType.BUFFER:
             return 'bytes'
-        if not is_byte_type(typename):
-            typename = get_generated_class_name(typename, attribute, schema)
-            if add_import:
-                self._add_required_import(format_import(typename))
-        if is_array(attribute_type):
-            typename = 'List[{0}]'.format(typename if typename != 'EntityTypeDto' else 'int')
-            if add_import:
-                self._add_required_import('from typing import List')
         if attribute_type == AttributeType.FLAGS:
             return 'int'
 
-        return typename
+        cat_type = attribute[CAT_TYPE]
+        return_type = None
+        if not is_byte_type(cat_type):
+            classname = get_generated_class_name(cat_type, attribute, schema)
+            if is_array(attribute_type):
+                return_type = 'List[{0}]'.format(classname if classname != 'EntityTypeDto' else 'int')
+                if add_import:
+                    self._add_standard_lib_import('from typing import List')
+            if add_import and 'int' not in str(return_type):
+                self._add_app_lib_import(format_import(classname))
+            if return_type is None:
+                return_type = classname
+        return return_type
 
-    def _add_required_import(self, full_class):
-        if full_class not in self.required_import:  # and '.int' not in full_class:
-            self.required_import.add(full_class)
+    def _add_standard_lib_import(self, import_statement):
+        if import_statement not in self.standard_lib_imports:
+            self.standard_lib_imports.add(import_statement)
 
-    def get_required_import(self):
-        import_list = list(self.required_import)
+    def _add_app_lib_import(self, full_class):
+        if full_class not in self.app_lib_imports:
+            self.app_lib_imports.add(full_class)
+
+    def get_required_imports(self):
+        import_list = list(self.standard_lib_imports)
         import_list.sort()
+        app_imports = list(self.app_lib_imports)
+        app_imports.sort()
+        import_list.extend(app_imports)
         return import_list
 
     def get_generated_name(self):
@@ -157,15 +168,12 @@ class PythonGeneratorBase(ABC):
         pass
 
     def _generate_class_methods(self):
-        # self._add_private_declarations()  # Not applicable. Can be modified and used in future for any class variable declaration.
         self._create_public_declarations()
         self._add_load_from_binary_method()
         self._add_getters_field()
         self._add_size_getter()
         self._generate_interface_methods()
         self._add_serialize_method()
-        blank_line = ['']
-        self.class_output += blank_line
 
     def generate(self):
         self._add_class_definition()

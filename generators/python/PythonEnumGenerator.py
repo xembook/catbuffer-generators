@@ -14,7 +14,7 @@ class PythonEnumGenerator(PythonGeneratorBase):
         log(type(self).__name__, '__init__')
         super(PythonEnumGenerator, self).__init__(name, schema, class_schema)
         self.enum_values = {}
-        # self.required_import.add('from enum import Enum')
+        # self.app_lib_imports.add('from enum import Enum')
         self.class_type = 'class'
         self._create_enum_values(self.class_schema)
 
@@ -43,7 +43,7 @@ class PythonEnumGenerator(PythonGeneratorBase):
         enum_count = 1
         for name, value_comments in self.enum_values.items():
             value, comments = value_comments
-            comment_text_line = get_comments_if_present(comments)
+            comment_text_line = get_comments_if_present(comments, True)
             if comment_text_line is not None:
                 self.class_output += [indent(comment_text_line)]
             line = '{0} = {1}'.format(name.upper(), value)

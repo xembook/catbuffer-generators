@@ -71,7 +71,10 @@ class PythonFileGenerator:
                     if line.startswith('/**') or line.startswith('**/'):
                         self.code += ['"""']
                     elif line.startswith('***'):
-                        self.code += [line.replace('***', '   ')]
+                        if len(line) > 3:
+                            self.code += [line.replace('***', '   ')]
+                        else:
+                            self.code += [line.replace('***', '')]
                     else:
                         self.code += [line]
 
@@ -80,7 +83,7 @@ class PythonFileGenerator:
 
     def update_code(self, generator):
         generated_class = generator.generate()
-        for import_type in generator.get_required_import():
+        for import_type in generator.get_required_imports():
             self.code += ['{0}'.format(import_type)]
         self.code += add_blank_lines(generated_class, 2)
 

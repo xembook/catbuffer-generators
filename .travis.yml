@@ -1,27 +1,28 @@
 language: python
 python:
-  - "3.6"
+- '3.7'
 addons:
   apt:
     packages:
-      - openjdk-8-jdk
+    - openjdk-8-jdk
 before_cache:
-  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+- rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 cache:
   directories:
-    - $HOME/.gradle/caches/
-    - $HOME/.gradle/wrapper/
-install: pip install pycodestyle pylint pylint-quotes pyyaml mako
+  - "$HOME/.gradle/caches/"
+  - "$HOME/.gradle/wrapper/"
+install:
+- pip install pycodestyle pylint pylint-quotes pyyaml mako twine
 env:
   matrix:
-    - SCRIPT="./scripts/generate_all.sh cpp_builder"
-    - SCRIPT="./scripts/generate_typescript.sh"
-    - SCRIPT="./scripts/generate_java.sh"
-    - SCRIPT="./scripts/generate_python.sh"
+  - SCRIPT="./scripts/generate_all.sh cpp_builder"
+  - SCRIPT="./scripts/generate_typescript.sh"
+  - SCRIPT="./scripts/generate_java.sh"
+  - SCRIPT="./scripts/generate_python.sh"
 before_script:
-  - pylint --load-plugins pylint_quotes generators
-  - pycodestyle --config=.pycodestyle .
-  - export PYTHONPATH=$PYTHONPATH:./catbuffer
+- pylint --load-plugins pylint_quotes generators
+- pycodestyle --config=.pycodestyle .
+- export PYTHONPATH=$PYTHONPATH:./catbuffer
 script:
-  - bash $SCRIPT
+- bash $SCRIPT

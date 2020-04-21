@@ -1,4 +1,4 @@
-from generators.python.Helpers import indent, NAME_VALUE_SUFFIX
+from generators.python.Helpers import indent, NAME_VALUE_SUFFIX, format_import
 
 
 # pylint: disable=too-few-public-methods
@@ -8,29 +8,31 @@ class PythonTransactionHelperGenerator:
     def __init__(self, class_name, entityType_enum_value, embedded):
         self.class_output = []
         self.class_name = class_name
+        self.standard_lib_imports = set()
+        self.app_lib_imports = set()
         self.imports = []
         self.embedded = embedded
         if self.embedded:
-            self.imports += ['from functools import reduce']
-            self.imports += ['from typing import List']
+            self.standard_lib_imports.add('from functools import reduce')
+            self.standard_lib_imports.add('from typing import List')
         self.enum_list = entityType_enum_value
-        self._add_import('EntityTypeDto')
+        self._add_app_lib_import('EntityTypeDto')
         if self.embedded:
-            self._add_import('EmbeddedTransactionBuilder')
-            self._add_import('GeneratorUtils')
+            self._add_app_lib_import('EmbeddedTransactionBuilder')
+            self._add_app_lib_import('GeneratorUtils')
         else:
-            self._add_import('TransactionBuilder')
+            self._add_app_lib_import('TransactionBuilder')
 
     def _read_file(self):
         loadFromBinary_method = self._write_loadFromBinary_method()  # also adds the imports
-        self.class_output += sorted(self.imports)
+        self.class_output += self.get_required_imports()
         self.class_output += [''] + ['']  # add 2 blank lines
         line = ['class {0}:'.format(self.class_name)]
         line += [indent('"""Helper class for {0}transaction serialization"""'.format('embedded ' if self.embedded else ''), 1)]
         line += ['']
         line += loadFromBinary_method
-        line += ['']
         if self.embedded:
+            line += ['']
             line += self._write_serialize_embedded_transaction_method()
             line += ['']
             line += self._write_size_getter()
@@ -49,16 +51,21 @@ class PythonTransactionHelperGenerator:
     def _write_loadFromBinary_method(self):
         if self.embedded:
             line = [indent('@classmethod')]
+            line += [indent('# pylint: disable=too-many-return-statements')]
+            line += [indent('# pylint: disable=too-many-branches')]
             line += [indent('def loadFromBinary(cls, payload: bytes) -> EmbeddedTransactionBuilder:')]
             line += [indent('"""Deserialize an embedded transaction from binary"""', 2)]
             line += [indent('header = EmbeddedTransactionBuilder.loadFromBinary(payload)', 2)]
         else:
             line = [indent('@classmethod')]
+            line += [indent('# pylint: disable=too-many-return-statements')]
+            line += [indent('# pylint: disable=too-many-branches')]
             line += [indent('def loadFromBinary(cls, payload: bytes) -> TransactionBuilder:')]
             line += [indent('"""Deserialize a transaction from binary"""', 2)]
             line += [indent('header = TransactionBuilder.loadFromBinary(payload)', 2)]
 
         line += [indent('entityType = header.getType' + NAME_VALUE_SUFFIX + '()', 2)]
+        line += [indent('# pylint: disable=no-else-return', 2)]
         if_clause = 'if'
         for name, value_comments in self.enum_list.items():
             # pylint: disable=unused-variable
@@ -69,7 +76,7 @@ class PythonTransactionHelperGenerator:
             elif value != 0 and not self.embedded:
                 builder_class = '{0}'.format(''.join([a.capitalize() for a in name.split('_')]))
             if builder_class is not None:
-                self._add_import(builder_class)
+                self._add_app_lib_import(builder_class)
                 line += [indent('{0} entityType == EntityTypeDto.{1}:'.format(if_clause, name), 2)]
                 line += [indent('return {0}.loadFromBinary(payload)'.format(builder_class), 3)]
                 if_clause = 'elif'
@@ -87,8 +94,16 @@ class PythonTransactionHelperGenerator:
             2)]
         return line
 
-    def _add_import(self, name):
-        self.imports += ['from .{0} import {0}'.format(name)]
+    def _add_app_lib_import(self, name):
+        self.app_lib_imports.add(format_import(name))
+
+    def get_required_imports(self):
+        import_list = list(self.standard_lib_imports)
+        import_list.sort()
+        app_imports = list(self.app_lib_imports)
+        app_imports.sort()
+        import_list.extend(app_imports)
+        return import_list
 
     def generate(self):
         self._read_file()

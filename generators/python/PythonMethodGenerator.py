@@ -24,7 +24,7 @@ class PythonMethodGenerator:
                 constructor_params.append('{0}'.format(param))
 
         method_header = 'def '
-        parameter = ', '.join(constructor_params) if method_name == '__init__' else ', '.join(params)
+        parameter = ','.join(constructor_params) if method_name == '__init__' else ', '.join(params)
 
         if return_type:
             method_header += '{0}({1}) -> {2}'.format(self.name, parameter, return_type)
@@ -39,7 +39,7 @@ class PythonMethodGenerator:
         self._indent_num = 1
         self.lint_command = []
         if len(method_header) > 100:
-            self.add_linting(indent('# pylint: disable-msg=line-too-long'))
+            self.add_linting('# pylint: disable-msg=line-too-long')
 
         self.method_doc = []
         self.method_body = []
@@ -51,7 +51,7 @@ class PythonMethodGenerator:
         self._indent_num += 1
 
     def get_method(self):
-        return self.method_annotation + self.method_header + self.lint_command + self.method_doc + self.method_body
+        return self.method_annotation + self.lint_command + self.method_header + self.method_doc + self.method_body
 
     def add_instructions(self, method_instructions, add_semicolon=False):
         for instruction in method_instructions:

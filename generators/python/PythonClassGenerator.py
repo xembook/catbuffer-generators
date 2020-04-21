@@ -3,7 +3,7 @@ from generators.python.PythonMethodGenerator import PythonMethodGenerator
 from generators.python.Helpers import create_enum_name, get_default_value, get_comment_from_name, \
     get_real_attribute_type, TypeDescriptorDisposition, get_attribute_if_size, get_byte_convert_method_name, \
     get_generated_class_name, indent, get_attribute_size, is_fill_array, get_attribute_property_equal, AttributeType, \
-    is_byte_type, is_var_array, get_read_method_name, is_enum_type, is_reserved_field, is_array, \
+    is_byte_type, is_var_array, get_read_method_name, is_enum_type, is_unused_field, is_reserved_field, is_array, \
     get_comments_from_attribute, format_import, capitalize_first_character, CAT_TYPE, log
 
 
@@ -19,7 +19,7 @@ class PythonClassGenerator(PythonGeneratorBase):
         self.conditional_param_list = []
         self.condition_param = []
         self.load_from_binary_attribute_list = []
-        self._add_required_import(format_import('GeneratorUtils'))
+        self._add_app_lib_import(format_import('GeneratorUtils'))
         self.condition_binary_declare_map = {}
         self._load_from_binary_condition_lines = []
 
@@ -115,7 +115,7 @@ class PythonClassGenerator(PythonGeneratorBase):
 
     def _add_load_from_binary_condition_not_declared(self, attribute, code_writer, add_semicolon=False):
         if attribute['condition'] not in self.condition_binary_declare_map.keys():
-            code_writer.add_instructions(['{0}ConditionBytes = bytes_[0, {1}]'.format(
+            code_writer.add_instructions(['{0}ConditionBytes = bytes_[0:{1}]'.format(
                 attribute['condition'], str(get_attribute_size(self.schema, attribute)))], add_semicolon)
             code_writer.add_instructions(['bytes_ = bytes_[{0}:]'.format(
                 str(get_attribute_size(self.schema, attribute)))], add_semicolon)
@@ -236,14 +236,14 @@ class PythonClassGenerator(PythonGeneratorBase):
         elif attribute_kind in (AttributeType.ARRAY, AttributeType.VAR_ARRAY, AttributeType.FILL_ARRAY):
             line = ''
             if attribute[CAT_TYPE] == 'EntityType':
-                lines += ['for x in self.{0}:'.format(attribute_name)]
+                lines += ['for _ in self.{0}:'.format(attribute_name)]
                 lines += [indent('size += 2')]
             elif attribute[CAT_TYPE] == 'EmbeddedTransaction':
-                lines += ['for x in self.{0}:'.format(attribute_name)]
-                lines += [indent('size += len(EmbeddedTransactionHelper.serialize(x))')]
+                lines += ['for _ in self.{0}:'.format(attribute_name)]
+                lines += [indent('size += len(EmbeddedTransactionHelper.serialize(_))')]
             else:
-                lines += ['for x in self.{0}:'.format(attribute_name)]
-                lines += [indent('size += x.getSize()')]
+                lines += ['for _ in self.{0}:'.format(attribute_name)]
+                lines += [indent('size += _.getSize()')]
         elif attribute_kind == AttributeType.FLAGS:
             line += self._get_custom_attribute_size_getter(attribute)
         else:
@@ -341,6 +341,8 @@ class PythonClassGenerator(PythonGeneratorBase):
         attribute_name = attribute['name']
         lines = ['{2}{0} = {1}'.format(attribute_name, read_method_name, '')]
         lines += ['bytes_ = bytes_[{0}:]'.format(size)]
+        if is_unused_field(attribute):
+            lines = ['# pylint: disable=unused-variable'] + lines
         self._add_attribute_condition_if_needed(attribute, load_from_binary_method, '', lines, True, True)
         if len(self.load_from_binary_attribute_list) <= 1:
             load_from_binary_method.add_instructions(
@@ -367,7 +369,7 @@ class PythonClassGenerator(PythonGeneratorBase):
         attribute_name = attribute['name']
         var_type = self.get_generated_type(self.schema, attribute)
         load_from_binary_method.add_instructions(['{0}{1} = []'.format(attribute_name, ': ' + var_type)])
-        load_from_binary_method.add_instructions(['for i in range({0}):'.format(attribute_sizename)])
+        load_from_binary_method.add_instructions(['for _ in range({0}):'.format(attribute_sizename)])
 
         if is_byte_type(attribute_typename):
             const_declaration = 'GeneratorUtils.getBytes(bytes_, 1)'
@@ -446,7 +448,7 @@ class PythonClassGenerator(PythonGeneratorBase):
         item_size = 'itemSize = item.getSize()'
         if attribute_typename == 'EmbeddedTransaction':
             serializer_name = 'EmbeddedTransactionHelper'
-            self.required_import.add('from .{0} import {0}'.format(serializer_name))
+            self.app_lib_imports.add(format_import(serializer_name))
             item_size = 'itemSize = item.getSize() + GeneratorUtils.getTransactionPaddingSize(item.getSize(), 8)'
 
         load_from_binary_method.add_instructions(
@@ -759,7 +761,7 @@ class PythonClassGenerator(PythonGeneratorBase):
                                                                                                   self._add_to_variable_list,
                                                                                                   condition_attribute_list,
                                                                                                   attribute_name))
-                    self._add_required_import(
+                    self._add_app_lib_import(
                         format_import(get_generated_class_name(variable_type, variable, self.schema)))
                 elif is_reserved_field(variable):
                     constructor_method.add_instructions(
@@ -789,9 +791,9 @@ class PythonClassGenerator(PythonGeneratorBase):
                                                                         'name',
                                                                         condition_attribute['condition'], False)
                 if condition_type_attribute:
-                    self._add_required_import(format_import(get_generated_class_name(condition_type_attribute[CAT_TYPE],
-                                                                                     condition_type_attribute,
-                                                                                     self.schema)))
+                    self._add_app_lib_import(format_import(get_generated_class_name(condition_type_attribute[CAT_TYPE],
+                                                                                    condition_type_attribute,
+                                                                                    self.schema)))
                     condition_type_value = '{0}.{1}'.format(
                         get_generated_class_name(condition_type_attribute[CAT_TYPE], condition_type_attribute,
                                                  self.schema),

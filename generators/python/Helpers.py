@@ -91,6 +91,14 @@ def is_reserved_field(attribute):
     return '_Reserved' in attribute['name']
 
 
+def is_size_field(attribute):
+    return 'size' in attribute['name']
+
+
+def is_unused_field(attribute):
+    return is_reserved_field(attribute) or is_size_field(attribute)
+
+
 def is_count_size_field(attribute):
     return attribute['name'].endswith('Size') or attribute['name'].endswith('Count')
 
@@ -143,8 +151,10 @@ def append_period_if_needed(line):
     return line if line.endswith('.') else line + '.'
 
 
-def get_comments_if_present(comment):
+def get_comments_if_present(comment, single_quote=False):
     if comment:
+        if single_quote:
+            return '\'\'\'{0}\'\'\''.format(format_description(comment))
         return '"""{0}"""'.format(format_description(comment))
     return None
 
@@ -227,13 +237,9 @@ def get_real_attribute_type(attribute):
 
 def get_type_by_attribute(attribute):
     if is_var_array(attribute):
-        # disabled temporary before fixing Embedded transaction deserialization issue
         return AttributeType.VAR_ARRAY
-
     if is_fill_array(attribute):
-        # disabled temporary before fixing Embedded transaction deserialization issue
         return AttributeType.FILL_ARRAY
-
     return AttributeType.UNKNOWN
 
 

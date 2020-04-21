@@ -21,7 +21,7 @@ class GeneratorUtils:
 
     @staticmethod
     def getTransactionPaddingSize(size: int, alignment: int) -> int:
-        if 0 == size % alignment:
+        if size % alignment == 0:
             return 0
         return alignment - (size % alignment)
 

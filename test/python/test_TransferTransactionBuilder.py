@@ -1,8 +1,20 @@
 import base64
 import unittest
 import importlib
+import os
+from pathlib import Path
 
-builderModulePath = '_generated.python.TransferTransactionBuilder'
+path = Path(os.getcwd())
+runningTestInGenerators = path.parts[len(path.parts) - 1] == 'python' and \
+                          path.parts[len(path.parts) - 2] == 'test' and \
+                          path.parts[len(path.parts) - 3] == 'catbuffer-generators'
+
+if runningTestInGenerators:
+    builderModulePath = '_generated.python.TransferTransactionBuilder'
+    print("INFO: Test code generated in catbuffer:", builderModulePath)
+else:
+    builderModulePath = 'symbol_catbuffer.TransferTransactionBuilder'
+    print("INFO: Test installed module:", builderModulePath)
 
 try:
     builderModule = importlib.import_module(builderModulePath)
@@ -76,10 +88,16 @@ try:
 
 except ModuleNotFoundError as err:
     print("ERROR: ModuleNotFoundError:", err)
-    print("DETAIL: Missing module path '{0}' in repository/submodule: catbuffer-generators/catbuffer.".format(builderModulePath))
-    print("POSSIBLE CAUSES:")
-    print("    1. The generated code is not in catbuffer-generators/catbuffer directory.")
-    print("       Try: Run ./scripts/generate_python.sh.")
-    print("    2. The catbuffer-generators/catbuffer directory is not in the search path for module files.")
-    print("       Try: Depending on your IDE, either Mark Directory (catbuffer) as Sources Root or check PYTHONPATH environment variable.")
+    if runningTestInGenerators:
+        print("DETAIL: Missing module path '{0}' in submodule: catbuffer-generators/catbuffer.".format(builderModulePath))
+        print("POSSIBLE CAUSES:")
+        print("    1. The submodule is not in the search path for module files.")
+        print("       Try: Mark Directory catbuffer as Sources Root or check PYTHONPATH environment variable.")
+        print("    2. The generated code is not in catbuffer-generators/catbuffer directory.")
+        print("       Try: Run ./scripts/generate_python.sh.")
+    else:
+        print("DETAIL: Missing module path '{0}'.".format(builderModulePath))
+        print("POSSIBLE CAUSES:")
+        print("    1. The '{0}' module is not in the search path for module files.".format(builderModulePath))
+        print("       Try: Mark Directory catbuffer as Sources Root or check PYTHONPATH environment variable.")
     raise
