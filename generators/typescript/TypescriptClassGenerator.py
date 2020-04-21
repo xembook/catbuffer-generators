@@ -70,7 +70,7 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
         self.class_output += ['']
 
     def _add_required_import_if_needed(self, var_type):
-        if var_type not in ['number', 'Uint8Array', 'number[]']:
+        if var_type not in ['number', 'Uint8Array', 'BigInt']:
             self._add_required_import(format_import(var_type))
 
     def _create_private_declaration(self, attribute, output):
@@ -241,12 +241,22 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
     @staticmethod
     def check_should_generate_class(name):
         return ((name.startswith('Embedded') and not name.endswith('Header'))
-                or name.startswith('Mosaic')
+                or 'Mosaic' in name
+                or name.startswith('Account')
+                or name.startswith('Address')
+                or name.startswith('Global')
+                or name.startswith('Multisig')
+                or name.startswith('Metadata')
+                or name.startswith('HeightActivity')
+                or name.startswith('ImportanceSnapshot')
+                or 'Namespace' in name
+                or 'Restrict' in name
+                or 'Lock' in name
+                or name.endswith('Info')
                 or name.startswith('Block')
                 or name.endswith('Transaction')
-                or name.endswith('Mosaic')
                 or (name.endswith('Body') and name != 'EntityBody')
-                or name.endswith('Receipt')
+                or 'Receipt' in name
                 or name.endswith('Modification')
                 or name.endswith('Cosignature'))
 
@@ -359,7 +369,7 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
         lines = ['{2}{0} = {1}'.format(attribute['name'], read_method_name, '' if self._is_conditional_attribute(attribute) else 'const ')]
         lines += ['byteArray.splice(0, {0})'.format(size)]
         self._add_attribute_condition_if_needed(attribute, load_from_binary_method, '', lines, True, True)
-        if len(self.load_from_binary_atrribute_list) <= 1:
+        if not self.load_from_binary_atrribute_list:
             load_from_binary_method.add_instructions(['return new {0}({1})'.format(self.generated_class_name, attribute['name'])])
 
     def _load_from_binary_buffer(self, attribute, load_from_binary_method):
@@ -372,12 +382,12 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
             lines = ['{1}{0} = Uint8Array.from(byteArray)'
                      .format(attribute['name'], '' if self._is_conditional_attribute(attribute) else 'const ')]
         load_from_binary_method.add_instructions(lines)
-        if len(self.load_from_binary_atrribute_list) <= 1:
+        if not self.load_from_binary_atrribute_list:
             load_from_binary_method.add_instructions(['return new {0}({1})'.format(self.generated_class_name, attribute['name'])])
 
     def _load_from_binary_array(self, attribute, load_from_binary_method):
         attribute_typename = attribute['type']
-        attribute_sizename = attribute['size']
+        attribute_sizename = '(Array.isArray({0}) ? GeneratorUtils.compact({0}) : {0})'.format(attribute['size'])
         attribute_name = attribute['name']
         var_type = get_generated_type(self.schema, attribute)
         load_from_binary_method.add_instructions(['const {0}{1} = []'
@@ -479,7 +489,8 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
 
     @staticmethod
     def is_count_size_field(field):
-        return field['name'].endswith('Size') or field['name'].endswith('Count')
+        return (field['name'].endswith('Size') or
+                (field['name'].endswith('Count') and 'beneficiaryCount' not in field['name']))
 
     def _generate_load_from_binary_attributes(self, attribute, load_from_binary_method):
         if self.is_count_size_field(attribute):
@@ -586,6 +597,8 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
             if attribute['name'] == 'payloadSize' and self.name == 'AggregateTransactionBody':
                 full_property_name = 'EmbeddedTransactionHelper.getEmbeddedTransactionSize(this.{0})'.format(attribute_name)
             method = '{0}({1}, {2})'.format(get_read_method_name(size), full_property_name, size)
+            if size == 8:
+                method = '{0}(GeneratorUtils.fromUint({1}))'.format(get_read_method_name(size), full_property_name)
             line = 'const {0} = {1}'.format(attribute_bytes_name, method)
             line2 = 'newArray = GeneratorUtils.concatTypedArrays(newArray, {0})'.format(attribute_bytes_name)
             serialize_method.add_instructions([line])
@@ -686,7 +699,7 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
             is_condition_attribute = self._is_attribute_conditional(attribute, condition_attribute_list)
             attribute_name = attribute['name']
             attribute_type = get_generated_type(self.schema, attribute)
-            if attribute_type not in ['number', 'Uint8Array']:
+            if attribute_type not in ['number', 'Uint8Array', 'BigInt']:
                 self._add_required_import(format_import(attribute_type))
             param = '{1}{2}: {0}'.format(attribute_type,
                                          attribute_name, '?' if is_condition_attribute else '')
@@ -698,13 +711,13 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
     def _create_list(self, name, callback, condition_attribute_list):
         param_list = []
         self._recursive_attribute_iterator(name, callback, (param_list, condition_attribute_list), [])
-        if not param_list:
+        if not param_list and not self.condition_param:
             return ''
-        param_string = param_list[0]
+        param_string = param_list[0] if param_list else self.condition_param[0]
         for param in param_list[1:]:
             param_string += ', {0}'.format(param)
 
-        for condition_param in self.condition_param:
+        for condition_param in self.condition_param if param_list else self.condition_param[1:]:
             param_string += ', {0}'.format(condition_param)
 
         self.condition_param = []

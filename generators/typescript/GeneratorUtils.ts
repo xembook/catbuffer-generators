@@ -4,20 +4,24 @@
 export class GeneratorUtils {
 
     /**
-     * Convert a UInt8Array input into an array of 2 numbers.
-	 * Numbers in the returned array are cast to UInt32.
+     * Convert a UInt8Array input into BigInt.
      * @param {Uint8Array} input A uint8 array.
-     * @returns {number[]} The uint64 representation of the input.
+     * @returns {BigInt} The BigInt representation of the input.
      */
-    public static bufferToUint64(input: Uint8Array): number[] {
+    public static bufferToBigInt(input: Uint8Array): BigInt {
         if (8 !== input.length) {
             throw Error(`byte array has unexpected size '${input.length}'`);
         }
         input = input.reverse();
-        const view = new DataView(input.buffer);
-        return [view.getUint32(4), view.getUint32(0)];
-    }
+        const Nibble_To_Char_Map = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
+        let s = '';
+        for (const byte of input) {
+            s += Nibble_To_Char_Map[byte >> 4];
+            s += Nibble_To_Char_Map[byte & 0x0F];
+        }
 
+        return BigInt(s);
+    }
     /**
      * Read 4 bytes as a uint32 value from buffer bytes starting at given index.
      * @param {Uint8Array} bytes A uint8 array.
@@ -77,13 +81,23 @@ export class GeneratorUtils {
     }
 
     /**
-     * Convert unit64 into buffer
-     * @param {number} uintValue Uint64 (number[]).
+     * Convert BigInt into buffer
+     * @param {BigInt} input bigint value.
      * @returns {Uint8Array}
      */
-    public static uint64ToBuffer(uintValue: number[]): Uint8Array {
-        const uint32Array = new Uint32Array(uintValue);
-        return new Uint8Array(uint32Array.buffer);
+    public static bigIntToBuffer(input: BigInt): Uint8Array {
+        const hex = input.toString(16).padStart(16, '0');
+        const len = hex.length / 2;
+        const uint8 = new Uint8Array(len);
+
+        let i = 0;
+        let j = 0;
+        while (i < len) {
+            uint8[i] = parseInt(hex.slice(j, j + 2), 16);
+            i += 1;
+            j += 2;
+        }
+        return uint8;
     }
 
     /**
@@ -132,5 +146,32 @@ export class GeneratorUtils {
      */
     public static getTransactionPaddingSize(size: number, alignment: number): number {
         return 0 === size % alignment ? 0 : alignment - (size % alignment);
+    }
+
+    /**
+     * Tries to compact a uint64 into a simple numeric.
+     * @param {module:coders/uint64~uint64} uint64 A uint64 value.
+     * @returns {number|module:coders/uint64~uint64}
+     * A numeric if the uint64 is no greater than Number.MAX_SAFE_INTEGER or the original uint64 value otherwise.
+     */
+    public static compact (uint64: number[]) {
+        const low = uint64[0];
+        const high = uint64[1];
+        // don't compact if the value is >= 2^53
+        if (0x00200000 <= high) {
+            return uint64;
+        }
+        // multiply because javascript bit operations operate on 32bit values
+        return (high * 0x100000000) + low;
+    }
+
+    /**
+     * Converts a numeric unsigned integer into a uint64.
+     * @param {number} number The unsigned integer.
+     * @returns {module:coders/uint64~uint64} The uint64 representation of the input.
+     */
+    public static fromUint(number: number): number[] {
+        const value = [(number & 0xFFFFFFFF) >>> 0, (number / 0x100000000) >>> 0];
+        return value;
     }
 }
