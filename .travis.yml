@@ -13,7 +13,7 @@ cache:
   - "$HOME/.gradle/caches/"
   - "$HOME/.gradle/wrapper/"
 install:
-- pip install pycodestyle pylint pylint-quotes pyyaml mako twine
+    - pip install pytest pycodestyle pylint pylint-quotes pyyaml mako twine wheel
 env:
   matrix:
   - SCRIPT="./scripts/generate_all.sh cpp_builder"

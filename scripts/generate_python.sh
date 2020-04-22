@@ -21,24 +21,41 @@ artifactName="catbuffer"
 # so we don't need to bump the artifact version or the prerelease version suffix.
 # Note: Leading zeros are dropped in HHMMSS during package build version normalization.
 #   1.2.0.YYYYMMDD.HHMMSS.dev1
-artifactVersion="0.0.2"
-prereleaseVersion="a1"
-prereleaseDateTime=".$(date -u +'%Y%m%d.%H%M%S')"  # UTC time
-upload=true   # convenient var to disable uploading of the artifact
+artifactVersion="0.0.3"  # Release (production) version
+prereleaseVersion="a1"   # Appended to Release version for Pre-releases
+prereleaseDateTime=".$(date -u +'%Y%m%d.%H%M%S')"  # UTC time; appended to Release version for Pre-releases
+snapshot=true
 repo="pypi"
+upload=true   # convenient var to disable uploading of the artifact
 
-if [[ -z $1 ]]; then
-  # upload=false  # uncomment to disable upload to pypi for snapshots
+if [[ -z $1 ]]; then  # Use prerelease+snapshot(datetime) version
+  upload=false  # upload is set to false for zero arguments
+  echo "Zero arguments: Disable upload to PyPI"
   artifactVersion="${artifactVersion}${prereleaseDateTime}${prereleaseVersion}"
-elif [[ $1 == "release" ]]; then
+elif [[ $1 == "publish" ]]; then  # Use prerelease version
   artifactVersion="${artifactVersion}${prereleaseVersion}"
-elif [[ $1 == "test" ]] || [[ $2 == "test" ]]; then
+elif [[ $1 == "test" ]] || [[ $2 == "test" ]]; then # Use prerelease+snapshot(datetime) version
   repo="testpypi"
   REPO_URL="https://test.pypi.org/legacy/"
   artifactVersion="${artifactVersion}${prereleaseDateTime}${prereleaseVersion}"
+elif [[ $1 == "release" ]]; then
+  snapshot=false
 fi
+
+echo "artifactName=${artifactName}"
 echo "artifactVersion=${artifactVersion}"
+echo "snapshot=${snapshot}"
 echo "repo=${repo}"
+
+GIT_USER_ID="$(cut -d'/' -f1 <<<"$TRAVIS_REPO_SLUG")"
+GIT_REPO_ID="$(cut -d'/' -f2 <<<"$TRAVIS_REPO_SLUG")"
+echo "Travis Repo Slug: $TRAVIS_REPO_SLUG"
+echo "Git User ID: $GIT_USER_ID"
+echo "Git Repo ID: $GIT_REPO_ID"
+if [[ $upload == true ]] && [[ $repo == "pypi" ]] && [[ -n $TRAVIS_REPO_SLUG ]] && [[ $GIT_USER_ID != 'nemtech' ]]; then
+  upload=false
+  echo "User is not 'nemtech': Disable upload to PyPI"
+fi
 
 artifactProjectName="${artifactPrefix}-${artifactName}-python"
 artifactBuildDir="${rootDir}/build/${artifactProjectName}"
@@ -86,26 +103,25 @@ PYTHONPATH="./src:${PYTHONPATH}" pylint --rcfile .pylintrc --load-plugins pylint
 # Deploy
 if [[ $upload == true ]]; then
   # Log intention
-  if [[ $1 == "publish" ]]; then
-    echo "Publishing python artifact[$artifactName $artifactVersion] to $repo"
-  else
+  if [[ $1 == "release" ]]; then
     echo "Releasing python artifact[$artifactName $artifactVersion] to $repo"
+  else
+    echo "Publishing python artifact[$artifactName $artifactVersion] to $repo"
   fi
   # Do upload
   if [[ $repo == "pypi" ]]; then
     if [[ -n ${PYPI_USER} ]] && [[ -n ${PYPI_PASS} ]]; then
-      echo "variable PYPI_USER and PYPI_PASS are already set"
+      echo "PYPI_USER and PYPI_PASS are already set: Uploading to PyPI"
       PYTHONPATH=".:${PYTHONPATH}" python3 -m twine upload -u "$PYPI_USER" -p "$PYPI_PASS" dist/*
     else
-      echo "variable PYPI_USER and/or PYPI_PASS not set - manual upload"
-      PYTHONPATH=".:${PYTHONPATH}" python3 -m twine upload --repository $repo dist/*
+      echo "PYPI_USER and/or PYPI_PASS not set: Cancelled upload to PyPI"
     fi
   else
     if [[ -n ${TEST_PYPI_USER} ]] && [[ -n ${TEST_PYPI_PASS} ]]; then
-      echo "variable TEST_PYPI_USER and TEST_PYPI_PASS are already set"
+      echo "TEST_PYPI_USER and TEST_PYPI_PASS are already set: Uploading to PyPI"
       PYTHONPATH=".:${PYTHONPATH}" python3 -m twine upload --repository-url $REPO_URL -u "$TEST_PYPI_USER" -p "$TEST_PYPI_PASS" dist/*
     else
-      echo "variable TEST_PYPI_USER and/or TEST_PYPI_PASS not set - manual upload"
+      echo "TEST_PYPI_USER and/or TEST_PYPI_PASS not set: Initiated manual upload"
       PYTHONPATH=".:${PYTHONPATH}" python3 -m twine upload --repository $repo dist/*
     fi
   fi
