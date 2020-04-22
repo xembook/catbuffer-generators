@@ -1,5 +1,11 @@
 # some transactions use types that need to be namespace-qualified in c++ builders
 
+VotingKeyLinkTransaction:
+  LinkAction: model
+
+VrfKeyLinkTransaction:
+  LinkAction: model
+  
 AddressAliasTransaction:
   AliasAction: model
 
@@ -7,7 +13,7 @@ MosaicAliasTransaction:
   AliasAction: model
 
 AccountLinkTransaction:
-  AccountLinkAction: model
+  LinkAction: model
 
 HashLockTransaction:
   UnresolvedMosaic: model
