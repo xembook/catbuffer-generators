@@ -1,4 +1,5 @@
-from generators.python.Helpers import indent, NAME_VALUE_SUFFIX, format_import
+import logging
+from generators.python.Helpers import indent, NAME_VALUE_SUFFIX, format_import, log
 
 
 # pylint: disable=too-few-public-methods
@@ -6,6 +7,8 @@ class PythonTransactionHelperGenerator:
     """Python transaction helper class generator"""
 
     def __init__(self, class_name, entityType_enum_value, embedded):
+        log(type(self).__name__, '__init__', ' {0} {1} {2}'.format(class_name, entityType_enum_value, embedded),
+            level=logging.DEBUG)
         self.class_output = []
         self.class_name = class_name
         self.standard_lib_imports = set()

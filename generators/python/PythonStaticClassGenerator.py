@@ -1,12 +1,14 @@
-# pylint: disable=too-few-public-methods
+import logging
 from inspect import getframeinfo, currentframe
 from os.path import dirname, abspath, realpath, join
+from generators.python.Helpers import log
 
 
 class PythonStaticClassGenerator:
     """Python static class generator"""
 
     def __init__(self, name):
+        log(type(self).__name__, '__init__', ' {0}'.format(name), level=logging.DEBUG)
         self.class_output = []
         self.name = name
 

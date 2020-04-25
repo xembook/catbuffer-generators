@@ -1,6 +1,7 @@
+import logging
 from generators.python.PythonGeneratorBase import PythonGeneratorBase
 from generators.python.Helpers import get_builtin_type, indent, get_comments_from_attribute, get_comments_if_present, \
-    create_enum_name, log
+    create_enum_name, log, FilterKey
 
 
 def get_type(attribute):
@@ -11,7 +12,8 @@ class PythonEnumGenerator(PythonGeneratorBase):
     """Python enum generator"""
 
     def __init__(self, name, schema, class_schema):
-        log(type(self).__name__, '__init__')
+        log(type(self).__name__, '__init__', ' {0}'.format(name), filterKey=FilterKey.TYPE_DESCRIPTOR,
+            filterValue=name, level=logging.DEBUG)
         super(PythonEnumGenerator, self).__init__(name, schema, class_schema)
         self.enum_values = {}
         # self.app_lib_imports.add('from enum import Enum')

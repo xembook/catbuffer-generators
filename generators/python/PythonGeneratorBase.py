@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from generators.python.Helpers import get_generated_class_name, get_comments_from_attribute, indent, format_description, \
     is_array, get_real_attribute_type, AttributeType, get_attribute_size, get_builtin_type, is_byte_type, format_import, \
@@ -9,8 +10,8 @@ class PythonGeneratorBase(ABC):
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self, name, schema, class_schema):
-        log(type(self).__name__, '__init__')
         self.generated_class_name = get_generated_class_name(name, class_schema, schema)
+        log('PythonGeneratorBase', '__init__', 'generated_class_name:'+self.generated_class_name, logging.DEBUG)
         self.base_class_name = None
         self.name = name
         self.schema = schema

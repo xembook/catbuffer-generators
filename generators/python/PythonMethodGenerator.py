@@ -1,5 +1,6 @@
+import logging
 from typing import List
-from generators.python.Helpers import indent, underscore_prefix
+from generators.python.Helpers import indent, underscore_prefix, log
 
 
 class PythonMethodGenerator:
@@ -7,6 +8,11 @@ class PythonMethodGenerator:
 
     def __init__(self, scope: str, return_type: str, method_name: str, params: List, exception_list='', class_method=False):
         # pylint: disable-msg=too-many-arguments
+        log(type(self).__name__, '__init__',
+            'scope:{0} return_type:{1} method_name:{2} params:{3} exception_list:{4} class_method:{5})'
+            .format(scope, return_type, method_name, str(params), exception_list, class_method),
+            level=logging.DEBUG)
+
         self.method_annotation = []
 
         if class_method:
@@ -14,6 +20,8 @@ class PythonMethodGenerator:
             params.insert(0, 'cls')
         else:
             params.insert(0, 'self')
+
+        log(type(self).__name__, '__init__', 'params:'+str(params), logging.DEBUG)
 
         self.name = underscore_prefix(method_name) if scope in ['private', 'protected'] else method_name
         joint_list = ', '.join(params)
@@ -23,8 +31,12 @@ class PythonMethodGenerator:
             for param in joint_list.split(','):
                 constructor_params.append('{0}'.format(param))
 
+        log(type(self).__name__, '__init__', 'constructor_params:'+str(constructor_params), logging.DEBUG)
+
         method_header = 'def '
         parameter = ','.join(constructor_params) if method_name == '__init__' else ', '.join(params)
+
+        log(type(self).__name__, '__init__', 'parameter:'+parameter, logging.DEBUG)
 
         if return_type:
             method_header += '{0}({1}) -> {2}'.format(self.name, parameter, return_type)
@@ -39,7 +51,7 @@ class PythonMethodGenerator:
         self._indent_num = 1
         self.lint_command = []
         if len(method_header) > 100:
-            self.add_linting('# pylint: disable-msg=line-too-long')
+            self.add_linting('# pylint: disable=line-too-long')
 
         self.method_doc = []
         self.method_body = []

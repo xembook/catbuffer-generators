@@ -1,20 +1,22 @@
+import logging
 from generators.python.PythonGeneratorBase import PythonGeneratorBase
 from generators.python.PythonMethodGenerator import PythonMethodGenerator
 from generators.python.Helpers import create_enum_name, get_default_value, get_comment_from_name, \
     get_real_attribute_type, TypeDescriptorDisposition, get_attribute_if_size, get_byte_convert_method_name, \
     get_generated_class_name, indent, get_attribute_size, is_fill_array, get_attribute_property_equal, AttributeType, \
     is_byte_type, is_var_array, get_read_method_name, is_enum_type, is_unused_field, is_reserved_field, is_array, \
-    get_comments_from_attribute, format_import, capitalize_first_character, CAT_TYPE, log
+    get_comments_from_attribute, format_import, capitalize_first_character, CAT_TYPE, log, FilterKey
 
 
 # pylint: disable=too-many-instance-attributes
 class PythonClassGenerator(PythonGeneratorBase):
     """Python class generator"""
 
-    def __init__(self, name, schema, class_schema, enum_list):
-        log(type(self).__name__, '__init__')
+    def __init__(self, name, schema, class_schema, enum_dict):
+        log(type(self).__name__, '__init__', ' {0} {1}'.format(name, str(dict(enum_dict).keys())),
+            filterKey=FilterKey.TYPE_DESCRIPTOR, filterValue=name, level=logging.DEBUG)
         super(PythonClassGenerator, self).__init__(name, schema, class_schema)
-        self.enum_list = enum_list
+        self.enum_list = enum_dict
         self.class_type = 'class'
         self.conditional_param_list = []
         self.condition_param = []
@@ -344,7 +346,8 @@ class PythonClassGenerator(PythonGeneratorBase):
         if is_unused_field(attribute):
             lines = ['# pylint: disable=unused-variable'] + lines
         self._add_attribute_condition_if_needed(attribute, load_from_binary_method, '', lines, True, True)
-        if len(self.load_from_binary_attribute_list) <= 1:
+        # if len(self.load_from_binary_attribute_list) <= 1:
+        if not self.load_from_binary_attribute_list:
             load_from_binary_method.add_instructions(
                 ['return {0}({1})'.format(self.generated_class_name, attribute_name)])
 
@@ -358,7 +361,8 @@ class PythonClassGenerator(PythonGeneratorBase):
         else:
             lines = ['{1}{0} = bytes_'.format(attribute_name, '')]
         load_from_binary_method.add_instructions(lines)
-        if len(self.load_from_binary_attribute_list) <= 1:
+        # if len(self.load_from_binary_attribute_list) <= 1:
+        if not self.load_from_binary_attribute_list:
             load_from_binary_method.add_instructions(
                 ['return {0}({1})'.format(self.generated_class_name, attribute_name)])
 
@@ -460,7 +464,8 @@ class PythonClassGenerator(PythonGeneratorBase):
 
     @staticmethod
     def is_count_size_field(field):
-        return field['name'].endswith('Size') or field['name'].endswith('Count')
+        return field['name'].endswith('Size') or \
+               (field['name'].endswith('Count') and 'beneficiaryCount' not in field['name'])
 
     def _generate_load_from_binary_attributes(self, attribute, load_from_binary_method):
         if self.is_count_size_field(attribute):
@@ -659,13 +664,16 @@ class PythonClassGenerator(PythonGeneratorBase):
     def _create_list(self, name, callback, condition_attribute_list):
         param_list = []
         self._recursive_attribute_iterator(name, callback, (param_list, condition_attribute_list), [])
-        if not param_list:
+
+        if not param_list and not self.condition_param:
             return ''
-        param_string = param_list[0]
+
+        param_string = param_list[0] if param_list else self.condition_param[0]
+
         for param in param_list[1:]:
             param_string += ', {0}'.format(param)
 
-        for condition_param in self.condition_param:
+        for condition_param in self.condition_param if param_list else self.condition_param[1:]:
             param_string += ', {0}'.format(condition_param)
 
         self.condition_param = []
@@ -785,6 +793,7 @@ class PythonClassGenerator(PythonGeneratorBase):
 
     def _add_constructor_internal_conditional_assignments(self, constructor_method, condition_attribute_list):
         if condition_attribute_list:
+            constructor_method.add_linting('# pylint: disable=too-many-boolean-expressions')
             for condition_attribute in condition_attribute_list:
                 condition_attribute_name = condition_attribute['name']
                 condition_type_attribute = get_attribute_property_equal(self.schema, self.class_schema['layout'],

@@ -34,7 +34,7 @@ def append_suffix_to_value(dict0, key0, value, suffix):
 
 class PythonFileGenerator:
     """Python file generator"""
-    enum_class_list = {}
+    enum_class_dict = {}
 
     @staticmethod
     def config_logging():
@@ -98,20 +98,19 @@ class PythonFileGenerator:
             value = append_suffix_to_value(value, 'name', 'type', NAME_VALUE_SUFFIX)
             value = append_suffix_to_value(value, 'name', 'id', NAME_VALUE_SUFFIX)
             value = append_suffix_to_value(value, 'name', 'hash', NAME_VALUE_SUFFIX)
-            # Name with 'Size' or 'Count' suffix specify the length or size of a list (array) but this one below is an exception
-            # so we suffix it to prevent it from being treated as such by this generator.
-            value = append_suffix_to_value(value, 'name', 'beneficiaryCount', NAME_VALUE_SUFFIX)
+            value = append_suffix_to_value(value, 'name', 'format', NAME_VALUE_SUFFIX)
+            value = append_suffix_to_value(value, 'condition', 'format', NAME_VALUE_SUFFIX)
             if 'layout' in value:
                 for layout_dict in value.get('layout'):
                     layout_dict = append_suffix_to_key(layout_dict, 'type', TYPE_SUFFIX)
                     layout_dict = append_suffix_to_value(layout_dict, 'name', 'type', NAME_VALUE_SUFFIX)
                     layout_dict = append_suffix_to_value(layout_dict, 'name', 'id', NAME_VALUE_SUFFIX)
                     layout_dict = append_suffix_to_value(layout_dict, 'name', 'hash', NAME_VALUE_SUFFIX)
-                    # Name with 'Size' or 'Count' suffix specify the length or size of a list (array) but this one below is an exception
-                    # so we suffix it to prevent it from being treated as such by this generator.
-                    append_suffix_to_value(layout_dict, 'name', 'beneficiaryCount', NAME_VALUE_SUFFIX)
+                    layout_dict = append_suffix_to_value(layout_dict, 'name', 'format', NAME_VALUE_SUFFIX)
+                    append_suffix_to_value(layout_dict, 'condition', 'format', NAME_VALUE_SUFFIX)
             self.schema = update_value(self.schema, type_descriptor, old_value, value)
 
+    # pylint: disable=too-many-statements
     def generate(self):
         filenames = []
 
@@ -122,32 +121,45 @@ class PythonFileGenerator:
             self.set_import()
             attribute_type = value[CAT_TYPE]
 
-            log(type(self).__name__, 'generate',
-                '{:<10}'.format(type_descriptor + ' value:' + str(value)))
+            log(type(self).__name__, 'generate(1000)',
+                '{:<10}'.format('*' + type_descriptor + '*' + ' value: ' + str(value)))
 
             if is_byte_type(attribute_type):
+                log(type(self).__name__, 'generate(1010)',
+                    '{:<10}'.format(type_descriptor + ' attribute type: ' + attribute_type), logging.DEBUG)
                 new_class = PythonDefineTypeClassGenerator(type_descriptor, self.schema, value,
-                                                           PythonFileGenerator.enum_class_list)
+                                                           PythonFileGenerator.enum_class_dict)
                 self.update_code(new_class)
                 filenames.append(new_class.get_generated_name())
                 yield self.code, new_class.get_generated_name()
             elif is_enum_type(attribute_type):
-                PythonFileGenerator.enum_class_list[type_descriptor] = PythonEnumGenerator(type_descriptor,
+                log(type(self).__name__, 'generate(1020)',
+                    '{:<10}'.format(type_descriptor + ' attribute type: ' + attribute_type), logging.DEBUG)
+                PythonFileGenerator.enum_class_dict[type_descriptor] = PythonEnumGenerator(type_descriptor,
                                                                                            self.schema, value)
+                log(type(self).__name__, 'generate(1021)',
+                    '{:<10}'.format(type_descriptor + ' attribute type: ' + attribute_type), logging.DEBUG)
             elif is_struct_type(attribute_type):
+                log(type(self).__name__, 'generate(1030)',
+                    '{:<10}'.format(type_descriptor + ' attribute type: ' + attribute_type), logging.DEBUG)
                 if PythonClassGenerator.check_should_generate_class(type_descriptor):
                     new_class = PythonClassGenerator(type_descriptor, self.schema, value,
-                                                     PythonFileGenerator.enum_class_list)
+                                                     PythonFileGenerator.enum_class_dict)
                     self.update_code(new_class)
                     filenames.append(new_class.get_generated_name())
                     yield self.code, new_class.get_generated_name()
 
+            log(type(self).__name__, 'generate(1099)',
+                '{:<10}'.format(type_descriptor), logging.DEBUG)
+
         # write all the enum last just in case there are 'dynamic values'
-        for type_descriptor, enum_class in PythonFileGenerator.enum_class_list.items():
+        for type_descriptor, enum_class in PythonFileGenerator.enum_class_dict.items():
             self._init_class()
             self.set_import()
             self.code += [''] + enum_class.generate()
             yield self.code, enum_class.get_generated_name()
+            log(type(self).__name__, 'generate(2000)',
+                '{:<10}'.format('*' + type_descriptor + '*' + ' enum classname: ' + enum_class.get_generated_name()))
 
             # write embedded transaction helper
             if type_descriptor == 'EntityType':
@@ -157,6 +169,8 @@ class PythonFileGenerator:
                 self.code += new_class.generate()
                 filenames.append(helper_class_name)
                 yield self.code, helper_class_name
+                log(type(self).__name__, 'generate(2010)',
+                    '{:<10}'.format(type_descriptor + ' helper classname: ' + helper_class_name), logging.DEBUG)
 
             if type_descriptor == 'EntityType':
                 helper_class_name = 'TransactionHelper'
@@ -165,6 +179,11 @@ class PythonFileGenerator:
                 self.code += new_class.generate()
                 filenames.append(helper_class_name)
                 yield self.code, helper_class_name
+                log(type(self).__name__, 'generate(2020)',
+                    '{:<10}'.format(type_descriptor + ' helper classname: ' + helper_class_name), logging.DEBUG)
+
+        log(type(self).__name__, 'generate(2099)',
+            '{:<10}'.format(type_descriptor), logging.DEBUG)
 
         # write all the  helper files
         helper_files = ['GeneratorUtils']
@@ -175,5 +194,6 @@ class PythonFileGenerator:
             self.code += new_class.generate()
             filenames.append(filename)
             yield self.code, filename
+            log(type(self).__name__, 'generate(3000)', '{:<10}'.format('*' + filename + '*'))
 
         log(type(self).__name__, 'generate', '*** END *** ' + datetime.now().strftime('%H:%M:%S %d-%b-%Y') + ' ***')

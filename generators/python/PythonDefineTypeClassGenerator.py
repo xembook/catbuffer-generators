@@ -1,4 +1,6 @@
-from generators.python.Helpers import AttributeType, get_real_attribute_type, get_comments_from_attribute, log
+import logging
+from generators.python.Helpers import AttributeType, get_real_attribute_type, get_comments_from_attribute, log, \
+    FilterKey
 from generators.python.PythonClassGenerator import PythonClassGenerator
 from generators.python.PythonMethodGenerator import PythonMethodGenerator
 
@@ -6,10 +8,11 @@ from generators.python.PythonMethodGenerator import PythonMethodGenerator
 class PythonDefineTypeClassGenerator(PythonClassGenerator):
     """Python define type class generator"""
 
-    def __init__(self, name, schema, class_schema, enum_list):
-        log(type(self).__name__, '__init__')
+    def __init__(self, name, schema, class_schema, enum_dict):
+        log(type(self).__name__, '__init__', ' {0} {1}'.format(name, str(dict(enum_dict).keys())),
+            filterKey=FilterKey.TYPE_DESCRIPTOR, filterValue=name, level=logging.DEBUG)
         class_schema['name'] = name[0].lower() + name[1:]
-        super(PythonDefineTypeClassGenerator, self).__init__(name, schema, class_schema, enum_list)
+        super(PythonDefineTypeClassGenerator, self).__init__(name, schema, class_schema, enum_dict)
         self.finalized_class = True
 
     def _create_public_declarations(self):

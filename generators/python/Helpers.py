@@ -7,6 +7,18 @@ import logging
 NAME_VALUE_SUFFIX = '_'
 TYPE_SUFFIX = ''
 CAT_TYPE = 'type' + TYPE_SUFFIX
+# If you want to limit the log output to selected type_descriptors,
+# enable the filter key and add the type_descriptors to the filter list
+# e.g.
+# FILTER_KEY_ENABLED = True
+# TYPE_DESCRIPTOR_FILTER_LIST = ['AccountState', 'NamespaceAlias', 'MosaicRestrictionEntry']
+FILTER_KEY_ENABLED = False
+TYPE_DESCRIPTOR_FILTER_LIST = []
+
+
+class FilterKey(Enum):
+    """Log filter key for Python generator"""
+    TYPE_DESCRIPTOR = 'type_descriptor'
 
 
 class TypeDescriptorType(Enum):
@@ -291,5 +303,20 @@ def add_blank_lines(text: str, num_of_lines=1) -> str:
     return text
 
 
-def log(classname, function_name, text=''):
-    logging.info('%s', '{:<30}'.format(classname) + '{:<27}'.format(function_name) + text)
+def log(classname, function_name, text='', level=20, filterKey='', filterValue=''):
+    """
+        Level       Numeric value
+        CRITICAL    50
+        ERROR       40
+        WARNING     30
+        INFO        20
+        DEBUG       10
+        NOTSET      0
+    """
+    output = True
+    if FILTER_KEY_ENABLED and filterKey \
+        and (filterKey == FilterKey.TYPE_DESCRIPTOR) \
+            and (filterValue not in TYPE_DESCRIPTOR_FILTER_LIST):
+        output = False
+    if output:
+        logging.log(level, '%s', '{:<30}'.format(classname) + '{:<27}'.format(function_name) + text)
