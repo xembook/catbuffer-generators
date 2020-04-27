@@ -32,7 +32,7 @@ def get_attribute_if_size(attribute_name, attributes, schema):
 
 def get_builtin_type(size):
     if size == 8:
-        return 'BigInt'
+        return 'number[]'
     return 'number'
 
 
@@ -40,7 +40,7 @@ def get_read_method_name(size):
     if isinstance(size, str) or size > 8:
         method_name = 'readFully'
     else:
-        method_name = 'GeneratorUtils.bigIntToBuffer' if size == 8 else 'GeneratorUtils.uintToBuffer'
+        method_name = 'GeneratorUtils.uint64ToBuffer' if size == 8 else 'GeneratorUtils.uintToBuffer'
     return method_name
 
 
@@ -48,7 +48,7 @@ def get_byte_convert_method_name(size):
     if isinstance(size, str) or size > 8:
         method_name = ''
     else:
-        method_name = 'GeneratorUtils.bufferToBigInt({0})' if size == 8 else 'GeneratorUtils.bufferToUint({0})'
+        method_name = 'GeneratorUtils.bufferToUint64({0})' if size == 8 else 'GeneratorUtils.bufferToUint({0})'
     return method_name
 
 

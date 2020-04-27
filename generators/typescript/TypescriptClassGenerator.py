@@ -70,7 +70,7 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
         self.class_output += ['']
 
     def _add_required_import_if_needed(self, var_type):
-        if var_type not in ['number', 'Uint8Array', 'BigInt']:
+        if var_type not in ['number', 'Uint8Array', 'number[]']:
             self._add_required_import(format_import(var_type))
 
     def _create_private_declaration(self, attribute, output):
@@ -699,7 +699,7 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
             is_condition_attribute = self._is_attribute_conditional(attribute, condition_attribute_list)
             attribute_name = attribute['name']
             attribute_type = get_generated_type(self.schema, attribute)
-            if attribute_type not in ['number', 'Uint8Array', 'BigInt']:
+            if attribute_type not in ['number', 'Uint8Array']:
                 self._add_required_import(format_import(attribute_type))
             param = '{1}{2}: {0}'.format(attribute_type,
                                          attribute_name, '?' if is_condition_attribute else '')

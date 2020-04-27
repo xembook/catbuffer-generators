@@ -250,7 +250,7 @@ class PythonClassGenerator(PythonGeneratorBase):
             line += self._get_custom_attribute_size_getter(attribute)
         else:
             line += self._get_custom_attribute_size_getter(attribute)
-        if len(line) > 0:
+        if line:
             lines = [line]
         self._add_attribute_condition_if_needed(attribute, method_writer, 'self.', lines, False, False, False)
 
