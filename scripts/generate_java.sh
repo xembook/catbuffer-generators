@@ -21,8 +21,8 @@ if [[ $1 == "release" ]]; then
   artifactVersion="${artifactVersion%$SNAPSHOT_PREFIX}"
 fi
 
-mkdir -p "$rootDir/build/java/$artifactName/src/main/java/io/nem/catapult/builders/"
-cp "$rootDir/catbuffer/_generated/java/"* "$rootDir/build/java/$artifactName/src/main/java/io/nem/catapult/builders/"
+mkdir -p "$rootDir/build/java/$artifactName/src/main/java/io/nem/symbol/catapult/builders/"
+cp "$rootDir/catbuffer/_generated/java/"* "$rootDir/build/java/$artifactName/src/main/java/io/nem/symbol/catapult/builders/"
 cp "$rootDir/generators/java/build.gradle" "$rootDir/build/java/$artifactName/"
 cp "$rootDir/generators/java/settings.gradle" "$rootDir/build/java/$artifactName/"
 
