@@ -65,8 +65,7 @@ def get_generated_type(schema, attribute):
 
     if is_array(attribute_type):
         return '{0}[]'.format(typename if typename != 'EntityTypeDto' else 'number')
-    if attribute_type == AttributeType.FLAGS:
-        return 'number'
+
     return typename
 
 

@@ -18,8 +18,8 @@ env:
   matrix:
   - SCRIPT="./scripts/generate_all.sh cpp_builder"
   - SCRIPT="./scripts/generate_typescript.sh"
-#  - SCRIPT="./scripts/generate_java.sh"
-  - SCRIPT="./scripts/generate_python.sh"
+  # - SCRIPT="./scripts/generate_java.sh"
+  # - SCRIPT="./scripts/generate_python.sh"
 before_script:
 - pylint --load-plugins pylint_quotes generators
 - pycodestyle --config=.pycodestyle .

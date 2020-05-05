@@ -103,6 +103,9 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
     # pylint: disable-msg=too-many-arguments
     def _add_if_condition_for_variable_if_needed(self, attribute, code_wirter, object_prefix,
                                                  if_condition, code_lines, add_var_declare=False, add_semicolon=True):
+        if attribute['condition_operation'] == 'has':
+            if_condition = '&'
+
         condition_type_attribute = get_attribute_property_equal(self.schema, self.class_schema['layout'], 'name', attribute['condition'])
         condition_type = '{0}.{1}'.format(get_generated_class_name(condition_type_attribute['type'], condition_type_attribute, self.schema),
                                           create_enum_name(attribute['condition_value']))
@@ -117,6 +120,9 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
 
     def _add_if_condition_for_variable_if_needed_load_binary(self, attribute, code_wirter, object_prefix,
                                                              if_condition, add_var_declare=False, add_semicolon=True):
+        if attribute['condition_operation'] == 'has':
+            if_condition = '&'
+
         condition_type_attribute = get_attribute_property_equal(self.schema, self.class_schema['layout'], 'name', attribute['condition'])
         condition_type = '{0}.{1}'.format(get_generated_class_name(condition_type_attribute['type'], condition_type_attribute, self.schema),
                                           create_enum_name(attribute['condition_value']))
@@ -167,7 +173,6 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
                 AttributeType.ARRAY: self._add_simple_getter,
                 AttributeType.CUSTOM: self._add_simple_getter,
                 AttributeType.FLAGS: self._add_simple_getter,
-                AttributeType.FLAGS: self._add_simple_getter,
                 AttributeType.FILL_ARRAY: self._add_simple_getter,
                 AttributeType.VAR_ARRAY: self._add_simple_getter
             }
@@ -194,18 +199,6 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
         setter.add_instructions(['this.{0} = {0}'.format(attribute_name)])
 
     @staticmethod
-    def _init_attribute_condition_exception(condition_attribute_list):
-        code_lines = []
-        condition_names = []
-        if condition_attribute_list:
-            for condition_attribute in condition_attribute_list:
-                condition_names.append('!' + condition_attribute['name'])
-            code_lines = ['if (({0}) || ({1})) {{'.format(' && '.join(condition_names).replace('!', ''), ' && '.join(condition_names))]
-            code_lines += [indent('throw new Error(\'Invalid conditional parameters\');')]
-            code_lines += ['}']
-        return code_lines
-
-    @staticmethod
     def _serialize_attribute_buffer(attribute, serialize_method):
         attribute_name = attribute['name']
         method = 'this.{0}'.format(attribute_name)
@@ -221,7 +214,7 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
         attribute_name = attribute['name']
         if condition_attribute_list:
             for condition_attribute in condition_attribute_list:
-                if condition_attribute['condition'] == attribute_name:
+                if condition_attribute['condition'] == attribute_name and condition_attribute['condition_operation'] == 'equals':
                     return False
         return True
 
@@ -249,6 +242,7 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
                 or name.startswith('Metadata')
                 or name.startswith('HeightActivity')
                 or name.startswith('ImportanceSnapshot')
+                or 'VrfProof' in name
                 or 'Namespace' in name
                 or 'Restrict' in name
                 or 'Lock' in name
@@ -796,8 +790,6 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
         object_attributes = []
         self._recursive_attribute_iterator(self.name, self._add_attribute_to_list, (object_attributes, condition_attribute_list),
                                            [self.base_class_name, self._get_body_class_name()])
-        if condition_attribute_list:
-            constructor_method.add_instructions(self._init_attribute_condition_exception(condition_attribute_list), False)
 
         for variable in object_attributes:
             if self._should_declaration(variable):
@@ -829,7 +821,7 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
 
     def _add_constructor_internal_conditional_assigments(self, constructor_method, condition_attribute_list):
         if condition_attribute_list:
-            # constructor_method.add_instructions(self._init_attribute_condition_exception(condition_attribute_list), False)
+            condition_attribute_list = [x for x in condition_attribute_list if x['condition_operation'] == 'equals']
             for condition_attribute in condition_attribute_list:
                 condition_type_attribute = get_attribute_property_equal(self.schema, self.class_schema['layout'], 'name',
                                                                         condition_attribute['condition'], False)
