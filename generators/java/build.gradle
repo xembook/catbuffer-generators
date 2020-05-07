@@ -15,6 +15,12 @@ repositories {
     mavenLocal()
 }
 
+dependencies {
+    testCompile 'org.bouncycastle:bcprov-jdk15on:1.58'
+    testImplementation(platform("org.junit:junit-bom:5.4.0"))
+    testImplementation("org.junit.jupiter:junit-jupiter:5.4.0")
+}
+
 def getPropertyValue(key, defaultValue = null) {
     def value = project.hasProperty(key) ? project[key] : System.getenv(key)
     return value?.trim() == '' ? defaultValue : value

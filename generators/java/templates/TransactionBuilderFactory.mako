@@ -14,9 +14,9 @@ public class TransactionBuilderFactory {
     public static EmbeddedTransactionBuilder createEmbeddedTransactionBuilder(final DataInputStream stream) {
 
         EmbeddedTransactionBuilder headerBuilder = EmbeddedTransactionBuilder.loadFromBinary(stream);
-% for name in schema:
+% for name in generator.schema:
     <%
-        layout = schema[name].get("layout", [{type:""}])
+        layout = generator.schema[name].get("layout", [{type:""}])
         entityTypeValue = next(iter([x for x in layout if x.get('type','') == 'EntityType']),{}).get('value',0)
     %>\
     %if (entityTypeValue > 0 and 'Aggregate' not in name):
@@ -42,9 +42,9 @@ public class TransactionBuilderFactory {
     public static TransactionBuilder createTransactionBuilder(final DataInputStream stream) {
 
         TransactionBuilder headerBuilder = TransactionBuilder.loadFromBinary(stream);
-% for name in schema:
+% for name in generator.schema:
     <%
-        layout = schema[name].get("layout", [{type:""}])
+        layout = generator.schema[name].get("layout", [{type:""}])
         entityTypeValue = next(iter([x for x in layout if x.get('type','') == 'EntityType']),{}).get('value',0)
     %>\
     %if (entityTypeValue > 0  and 'Aggregate' not in name):
