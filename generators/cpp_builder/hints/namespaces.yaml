@@ -12,7 +12,7 @@ AddressAliasTransaction:
 MosaicAliasTransaction:
   AliasAction: model
 
-AccountLinkTransaction:
+AccountKeyLinkTransaction:
   LinkAction: model
 
 HashLockTransaction:

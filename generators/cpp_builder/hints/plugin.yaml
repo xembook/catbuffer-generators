@@ -3,7 +3,7 @@
 VotingKeyLinkTransaction: ../coresystem
 VrfKeyLinkTransaction: ../coresystem
 
-AccountLinkTransaction: account_link
+AccountKeyLinkTransaction: account_link
 
 AggregateCompleteTransaction: aggregate
 AggregateBondedTransaction: aggregate
