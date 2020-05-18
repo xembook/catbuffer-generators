@@ -37,6 +37,11 @@ class JavaHelper(Helper):
             method_name = typesize_methodname[size]
         return method_name
 
+    def get_to_unsigned_method_name(self, size):
+        unsigned_methodname = {1: 'GeneratorUtils.toUnsignedInt({0})',
+                               2: 'GeneratorUtils.toUnsignedInt({0})'}
+        return unsigned_methodname[size]
+
     def get_write_method_name(self, size):
         if isinstance(size, str) or size > 8 or size == 0:
             method_name = 'write'

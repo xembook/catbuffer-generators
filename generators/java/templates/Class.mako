@@ -160,9 +160,9 @@ public class ${generator.generated_class_name}${(' extends ' + str(generator.gen
 ## SIZE:
 <%def name="renderSize(a)" filter="trim">\
     % if a.kind == helper.AttributeKind.SIMPLE:
-        size += ${a.attribute_size};
+        size += ${a.attribute_size}; // ${a.attribute_name}
     % elif a.kind == helper.AttributeKind.SIZE_FIELD:
-        size += ${a.attribute_size};
+        size += ${a.attribute_size}; // ${a.attribute_name}
     % elif a.kind == helper.AttributeKind.BUFFER:
         size += this.${a.attribute_name}.array().length;
    % elif a.kind == helper.AttributeKind.ARRAY or a.kind == helper.AttributeKind.VAR_ARRAY or a.kind == helper.AttributeKind.FILL_ARRAY:
@@ -228,7 +228,7 @@ public class ${generator.generated_class_name}${(' extends ' + str(generator.gen
     % elif a.kind == helper.AttributeKind.CUSTOM:
             GeneratorUtils.writeEntity(dataOutputStream, this.${a.attribute_name});
     % elif a.kind == helper.AttributeKind.FLAGS:
-            dataOutputStream.${helper.get_write_method_name(a.attribute_size)}(${helper.get_reverse_method_name(a.attribute_size).format('(byte) GeneratorUtils.toLong(' + a.attribute_class_name + '.class, this.' + a.attribute_name + ')')});
+            dataOutputStream.${helper.get_write_method_name(a.attribute_size)}(${helper.get_reverse_method_name(a.attribute_size).format('(' +  helper.get_builtin_type(a.attribute_size) + ') GeneratorUtils.toLong(' + a.attribute_class_name + '.class, this.' + a.attribute_name + ')')});
     % else:
             // Ignored serialization: ${a.attribute_name} ${a.kind}
     % endif

@@ -62,7 +62,7 @@ public enum ${generator.generated_class_name} implements ${'BitMaskable, ' if ge
      * @return Value of the enum.
      */
     public long getValueAsLong() {
-        return this.value;
+        return ${helper.get_to_unsigned_method_name(generator.size).format('this.value')};
     }
 
 % endif

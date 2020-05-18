@@ -62,6 +62,26 @@ public final class GeneratorUtils {
     }
 
     /**
+     * Converts to an int by an unsigned conversion.
+     *
+     * @param value Signed byte.
+     * @return Positive integer.
+     */
+    public static int toUnsignedInt(final byte value) {
+        return Byte.toUnsignedInt(value);
+    }
+
+    /**
+     * Converts to an int by an unsigned conversion.
+     *
+     * @param value Signed short.
+     * @return Positive integer.
+     */
+    public static int toUnsignedInt(final short value) {
+        return Short.toUnsignedInt(value);
+    }
+
+    /**
      * Creates a bitwise representation for an Set.
      *
      * @param enumClass Enum type.
