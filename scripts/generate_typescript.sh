@@ -3,12 +3,16 @@ set -e
 
 rootDir="$(dirname $0)/.."
 
-SNAPSHOT_PREFIX="-SNAPSHOT"
-artifactName="catbuffer-typescript"
-artifactVersion="0.0.14"
+ARTIFACT_NAME="catbuffer-typescript"
+RELEASE_VERSION="0.0.20"
+ALPHA_VERSION="${RELEASE_VERSION}-alpha-$(date +%Y%m%d%H%M)"
+CURRENT_VERSION="$ALPHA_VERSION"
+if [[ $1 == "release" ]]; then
+  CURRENT_VERSION="$RELEASE_VERSION"
+fi
 
 rm -rf "${rootDir}/catbuffer/_generated/typescript"
-rm -rf "$rootDir/build/typescript/$artifactName"
+rm -rf "$rootDir/build/typescript/$ARTIFACT_NAME"
 
 PYTHONPATH=".:${PYTHONPATH}" python3 "catbuffer/main.py" \
   --schema catbuffer/schemas/all.cats \
@@ -17,26 +21,26 @@ PYTHONPATH=".:${PYTHONPATH}" python3 "catbuffer/main.py" \
   --generator typescript \
   --copyright catbuffer/HEADER.inc
 
-if [[ $1 == "release" ]]; then
-  artifactVersion="${artifactVersion%$SNAPSHOT_PREFIX}"
-fi
+mkdir -p "$rootDir/build/typescript/$ARTIFACT_NAME/src/"
+cp "$rootDir/catbuffer/_generated/typescript/"* "$rootDir/build/typescript/$ARTIFACT_NAME/src/"
+cp "$rootDir/generators/typescript/.npmignore" "$rootDir/build/typescript/$ARTIFACT_NAME/"
+cp "$rootDir/generators/typescript/package.json" "$rootDir/build/typescript/$ARTIFACT_NAME/"
+cp "$rootDir/generators/typescript/README.md" "$rootDir/build/typescript/$ARTIFACT_NAME/"
+cp "$rootDir/generators/typescript/tsconfig.json" "$rootDir/build/typescript/$ARTIFACT_NAME/"
+sed -i -e "s/#artifactName/$ARTIFACT_NAME/g" "$rootDir/build/typescript/$ARTIFACT_NAME/package.json"
+sed -i -e "s/#artifactVersion/$CURRENT_VERSION/g" "$rootDir/build/typescript/$ARTIFACT_NAME/package.json"
 
-mkdir -p "$rootDir/build/typescript/$artifactName/src/"
-cp "$rootDir/catbuffer/_generated/typescript/"* "$rootDir/build/typescript/$artifactName/src/"
-cp "$rootDir/generators/typescript/.npmignore" "$rootDir/build/typescript/$artifactName/"
-cp "$rootDir/generators/typescript/package.json" "$rootDir/build/typescript/$artifactName/"
-cp "$rootDir/generators/typescript/README.md" "$rootDir/build/typescript/$artifactName/"
-cp "$rootDir/generators/typescript/tsconfig.json" "$rootDir/build/typescript/$artifactName/"
-sed -i -e "s/#artifactName/$artifactName/g" "$rootDir/build/typescript/$artifactName/package.json"
-sed -i -e "s/#artifactVersion/$artifactVersion/g" "$rootDir/build/typescript/$artifactName/package.json"
-
-npm install --prefix "$rootDir/build/typescript/$artifactName/"
-npm run build --prefix "$rootDir/build/typescript/$artifactName/"
+npm install --prefix "$rootDir/build/typescript/$ARTIFACT_NAME/"
+npm run build --prefix "$rootDir/build/typescript/$ARTIFACT_NAME/"
 
 if [[ $1 == "release" ]]; then
-  echo "Releasing artifact $artifactVersion"
-  cd "$rootDir/build/typescript/$artifactName/" && npm publish
+  echo "Releasing artifact $CURRENT_VERSION"
+  cp "$rootDir/generators/typescript/.npmignore" "$rootDir/build/typescript/$ARTIFACT_NAME/"
+  cp "$rootDir/generators/typescript/.npmrc" "$rootDir/build/typescript/$ARTIFACT_NAME/"
+  cd "$rootDir/build/typescript/$ARTIFACT_NAME/" && npm publish
 elif [[ $1 == "publish" ]]; then
-  echo "Publishing artifact $artifactVersion"
-  cd "$rootDir/build/typescript/$artifactName/" && npm publish
+  echo "Publishing artifact $CURRENT_VERSION"
+  cp "$rootDir/generators/typescript/.npmignore" "$rootDir/build/typescript/$ARTIFACT_NAME/"
+  cp "$rootDir/generators/typescript/.npmrc" "$rootDir/build/typescript/$ARTIFACT_NAME/"
+  cd "$rootDir/build/typescript/$ARTIFACT_NAME/" && npm publish --tag alpha
 fi
