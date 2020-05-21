@@ -107,6 +107,8 @@ if (ossrhUsername) {
                 password = ossrhPassword
             }
         }
+        connectTimeout = Duration.ofSeconds(360)
+        clientTimeout = Duration.ofSeconds(360)
     }
 
     nexusStaging {
