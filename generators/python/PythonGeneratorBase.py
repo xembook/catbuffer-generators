@@ -125,25 +125,28 @@ class PythonGeneratorBase(ABC):
 
     def get_generated_type(self, schema, attribute, add_import=False):
         attribute_type = get_real_attribute_type(attribute)
-        if attribute_type in (AttributeType.SIMPLE, AttributeType.SIZE_FIELD):
-            return get_builtin_type(get_attribute_size(schema, attribute))
-        if attribute_type == AttributeType.BUFFER:
-            return 'bytes'
-        if attribute_type == AttributeType.FLAGS:
-            return 'int'
-
-        cat_type = attribute[CAT_TYPE]
         return_type = None
-        if not is_byte_type(cat_type):
-            classname = get_generated_class_name(cat_type, attribute, schema)
-            if is_array(attribute_type):
-                return_type = 'List[{0}]'.format(classname if classname != 'EntityTypeDto' else 'int')
-                if add_import:
-                    self._add_standard_lib_import('from typing import List')
-            if add_import and 'int' not in str(return_type):
-                self._add_app_lib_import(format_import(classname))
-            if return_type is None:
-                return_type = classname
+        if attribute_type in (AttributeType.SIMPLE, AttributeType.SIZE_FIELD):
+            return_type = get_builtin_type(get_attribute_size(schema, attribute))
+        if attribute_type == AttributeType.BUFFER:
+            return_type = 'bytes'
+        if attribute_type == AttributeType.FLAGS:
+            return_type = 'int'
+
+        if return_type is None:
+            cat_type = attribute[CAT_TYPE]
+            if not is_byte_type(cat_type):
+                classname = get_generated_class_name(cat_type, attribute, schema)
+                if is_array(attribute_type):
+                    return_type = 'List[{0}]'.format(classname if classname != 'EntityTypeDto' else 'int')
+                    if add_import:
+                        self._add_standard_lib_import('from typing import List')
+                if add_import and 'int' not in str(return_type):
+                    self._add_app_lib_import(format_import(classname))
+                if return_type is None:
+                    return_type = classname
+
+        log('PythonGeneratorBase', 'get_generated_type', 'attribute_type: ' + str(attribute_type) + ' return_type: ' + str(return_type))
         return return_type
 
     def _add_standard_lib_import(self, import_statement):
