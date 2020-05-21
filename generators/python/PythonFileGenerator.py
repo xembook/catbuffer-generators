@@ -42,7 +42,7 @@ class PythonFileGenerator:
             os.remove('PythonGenerator.log')
         except OSError:
             pass
-        logging.basicConfig(filename='PythonGenerator.log', level=logging.DEBUG)
+        logging.basicConfig(filename='PythonGenerator.log', level=logging.ERROR)
 
     def __init__(self, schema, options):
         self.config_logging()
