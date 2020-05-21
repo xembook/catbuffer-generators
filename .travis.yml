@@ -17,9 +17,9 @@ install:
 env:
   matrix:
   - SCRIPT="./scripts/generate_all.sh cpp_builder"
-  - SCRIPT="./scripts/generate_typescript.sh"
-  - SCRIPT="./scripts/generate_java.sh"
-  - SCRIPT="./scripts/generate_python.sh"
+  - SCRIPT="./scripts/generate_typescript.sh $TYPESCRIPT_GENERATE_OPERATION"
+  - SCRIPT="./scripts/generate_java.sh $JAVA_GENERATE_OPERATION"
+  - SCRIPT="./scripts/generate_python.sh $PYTHON_GENERATE_OPERATION"
 before_script:
 - pylint --load-plugins pylint_quotes generators
 - pycodestyle --config=.pycodestyle .
