@@ -47,6 +47,8 @@ class PythonEnumGenerator(PythonGeneratorBase):
             value, comments = value_comments
             comment_text_line = get_comments_if_present(comments, True)
             if comment_text_line is not None:
+                if len(comment_text_line) >= 140:
+                    self.class_output += ['# pylint: disable=line-too-long']
                 self.class_output += [indent(comment_text_line)]
             line = '{0} = {1}'.format(name.upper(), value)
             self.class_output += [indent(line)]

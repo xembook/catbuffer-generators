@@ -52,6 +52,8 @@ class PythonMethodGenerator:
         self.lint_command = []
         if len(method_header) > 100:
             self.add_linting('# pylint: disable=line-too-long')
+        if len(constructor_params) > 15:
+            self.add_linting('# pylint: disable=too-many-public-methods')
 
         self.method_doc = []
         self.method_body = []

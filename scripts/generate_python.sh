@@ -62,7 +62,6 @@ artifactBuildDir="${rootDir}/build/${artifactProjectName}"
 artifactSrcDir="${artifactBuildDir}/src"
 artifactPackageDir="${artifactSrcDir}/${artifactPrefix}_${artifactName}"
 artifactTestDir="${artifactBuildDir}/test"
-artifactDistDir="${artifactBuildDir}/dist"
 
 rm -rf "${rootDir}/catbuffer/_generated/python"
 rm -rf "${artifactBuildDir}"

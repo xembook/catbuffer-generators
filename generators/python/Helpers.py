@@ -183,6 +183,7 @@ def create_enum_name(name):
 
 def get_comments_from_attribute(attribute, formatted=True):
     comment_text = attribute['comments'].strip() if 'comments' in attribute else ''
+    comment_text = comment_text.replace('\\', '')
     if not comment_text and 'name' in attribute:
         comment_text = get_comment_from_name(attribute['name'])
     return get_comments_if_present(comment_text) if formatted else comment_text
