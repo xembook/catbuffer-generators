@@ -6,8 +6,8 @@ from generators.common.Helper import TypeDescriptorDisposition
 from .MakoStaticClassGenerator import MakoStaticClassGenerator
 
 AttributeData = namedtuple('AttributeData',
-                           ['attribute', 'kind', 'attribute_name', 'attribute_comment', 'attribute_var_type',
-                            'attribute_is_final', 'attribute_class_name', 'attribute_is_super',
+                           ['attribute', 'kind', 'attribute_name', 'attribute_comment', 'attribute_base_type',
+                            'attribute_var_type', 'attribute_is_final', 'attribute_class_name', 'attribute_is_super',
                             'attribute_size', 'attribute_is_conditional', 'attribute_aggregate_attribute_name',
                             'attribute_is_reserved', 'attribute_aggregate_class', 'attribute_is_inline',
                             'attribute_is_aggregate', 'parent_attribute', 'condition_type_attribute',
@@ -43,9 +43,7 @@ class MakoClassGenerator(MakoStaticClassGenerator):
                            a.attribute_is_conditional and a.attribute['condition_operation'] != 'has']
         condition_types_values = self._calculate_constructor_options(condition_types)
 
-        self.all_constructor_params = [a for a in self.attributes if
-                                       not a.kind == helper.AttributeKind.SIZE_FIELD and a.attribute_name != 'size'
-                                       ]
+        self.all_constructor_params = helper.get_all_constructor_params(self.attributes)
         # not a.attribute_is_aggregate
         self.constructor_attributes = [self.all_constructor_params] if not condition_types else [
             self.constructor_arguments(self.all_constructor_params, condition_type) for condition_type in
@@ -102,7 +100,6 @@ class MakoClassGenerator(MakoStaticClassGenerator):
                 callback(attribute, aggregate_attribute)
 
     def _add_attribute(self, attribute, aggregate_attribute):
-
         aggregate_attribute_name = aggregate_attribute['name'] if aggregate_attribute else None
         aggregate_attribute_type = aggregate_attribute['type'] if aggregate_attribute else None
         kind = self.helper.get_attribute_kind(attribute)
@@ -113,6 +110,7 @@ class MakoClassGenerator(MakoStaticClassGenerator):
         attribute_var_type = self.helper.get_generated_type(self.schema, attribute)
         attribute_is_final = attribute_name != 'size' and not attribute_is_conditional
         attribute_type = attribute.get('type', None)
+        attribute_base_type = self.helper.get_base_type(self.schema, attribute_type)
         attribute_class_name = self.helper.get_generated_class_name(attribute_type, attribute, self.schema)
         attribute_aggregate_attribute_name = aggregate_attribute_name
         attribute_is_aggregate = self.helper.is_inline_class(attribute)
@@ -122,7 +120,10 @@ class MakoClassGenerator(MakoStaticClassGenerator):
         attribute_is_reserved = self.helper.is_reserved_field(attribute)
         attribute_is_inline = not attribute_is_super and aggregate_attribute_name is not None
         attribute_aggregate_class = attribute.get('aggregate_class', None)
-        self.required_import.add(attribute_var_type)
+        self.required_import = self.helper.add_required_import(self.required_import,
+                                                               attribute_var_type,
+                                                               self.generated_class_name,
+                                                               self.generated_base_class_name)
         if attribute_is_conditional:
             condition_type_attribute = self.helper.get_attribute_property_equal(self.schema,
                                                                                 self.class_schema['layout'], 'name',
@@ -138,7 +139,7 @@ class MakoClassGenerator(MakoStaticClassGenerator):
                 [a1 for a1 in self.attributes if a1.attribute_name == attribute['condition']]) == 0
 
         attribute_tuple = AttributeData(attribute, kind, attribute_name,
-                                        attribute_comment, attribute_var_type,
+                                        attribute_comment, attribute_base_type, attribute_var_type,
                                         attribute_is_final, attribute_class_name,
                                         attribute_is_super, attribute_size, attribute_is_conditional,
                                         attribute_aggregate_attribute_name, attribute_is_reserved,

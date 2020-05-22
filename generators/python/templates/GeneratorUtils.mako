@@ -1,3 +1,4 @@
+
 class GeneratorUtils:
     """Generator utility class"""
 

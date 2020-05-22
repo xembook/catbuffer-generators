@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 
 # pylint: disable=too-many-public-methods
 
+
 class TypeDescriptorType(Enum):
     """Type descriptor enum"""
     Byte = 'byte'
@@ -104,6 +105,20 @@ class Helper(ABC):
         # if false, there is no super class, all inline attributes use inline builders.
         return True
 
+    @staticmethod
+    def add_required_import(required_import: set,
+                            import_type,
+                            class_name,
+                            base_class_name  # pylint: disable=unused-argument
+                            ):
+        if not import_type == class_name:
+            required_import.add(import_type)
+        return required_import
+
+    @staticmethod
+    def get_all_constructor_params(attributes):
+        return [a for a in attributes if not a.kind == AttributeKind.SIZE_FIELD and a.attribute_name != 'size']
+
     def get_generated_class_name(self, typename, class_schema, schema):
         class_type = class_schema['type']
         default_name = typename + 'Dto'
@@ -123,6 +138,13 @@ class Helper(ABC):
                 return attr['size']
             return 1
         return attribute['size']
+
+    @staticmethod
+    def get_base_type(schema: dict, attribute_type):
+        attribute: dict = schema.get(attribute_type)
+        if attribute is not None:
+            return attribute.get('type')
+        return None
 
     @staticmethod
     def is_flags_enum(attribute_type):

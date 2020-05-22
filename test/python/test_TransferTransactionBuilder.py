@@ -37,7 +37,7 @@ try:
             self.messageType = 0
             self.messageText = 'NEM'  # hex: '4E454D'
             self.signerPublicKey = 'C2F93346E27CE6AD1A9F8F5E3066F8326593A406BDF357ACB041E2F9AB402EFE'
-            self.networkType = '144'  # MIJIN_TEST
+            self.networkType = 144  # MIJIN_TEST
             self.deadline = 8511103607
             self.recipientAddress = b'SBILTA367K2LX2FEXG5TFWAS7GEFYAGY7QLFBYKC'
             mosaicId1 = '67F2B76F28BD36BA'  # 7490250818323297978
@@ -46,7 +46,7 @@ try:
             self.mosaicIds = [mosaicId1, mosaicId2, mosaicId3]
 
         def test_type(self):
-            type_ = self.builder.getType_()
+            type_ = self.builder.getType().value
             self.assertEqual(type_, self.type_)
 
         def test_version(self):
@@ -62,8 +62,8 @@ try:
             self.assertEqual(str(signerPublicKey), self.signerPublicKey)
 
         def test_network_type(self):
-            networkType = self.builder.getNetwork()
-            self.assertEqual(str(networkType), self.networkType)
+            networkType = self.builder.getNetwork().value
+            self.assertEqual(networkType, self.networkType)
 
         def test_deadline(self):
             deadline = self.builder.getDeadline().getTimestamp()

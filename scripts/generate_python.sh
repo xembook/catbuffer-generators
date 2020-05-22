@@ -9,7 +9,7 @@ echo "${rootDir}"
 artifactPrefix="symbol"
 artifactName="catbuffer"
 
-# Artifact versioning for uploading to PyPI (PEP 440 compliant)
+# PEP 440 compliant semantic version is used for uploading to PyPI
 # Examples
 #   1.2.0.dev1    # Development release
 #   1.2.0a1       # Alpha Release
@@ -17,27 +17,32 @@ artifactName="catbuffer"
 #   1.2.0rc1      # Release Candidate
 #   1.2.0         # Final Release
 #   1.2.0.post1   # Post Release
-# Insert UTC datetime for snapshots and dev testing releases,
-# so we don't need to bump the artifact version or the prerelease version suffix.
-# Note: Leading zeros are dropped in HHMMSS during package build version normalization.
-#   1.2.0.YYYYMMDD.HHMMSS.dev1
-artifactVersion="0.0.3"  # Release (production) version
-prereleaseVersion="a1"   # Appended to Release version for Pre-releases
-prereleaseDateTime=".$(date -u +'%Y%m%d.%H%M%S')"  # UTC time; appended to Release version for Pre-releases
+# For pre-releases (alpha, beta, rc):
+# - A UTC timestamp (YYYYMMDD.HHMMSS) is embedded for automatic publishing; no need to increment the prerelease version.
+#   e.g. 0.0.3.20200522.070728a1
+# - Any leading zeros in the date and/or time portions are dropped during the package build version normalization.
+#   e.g. 0.0.3.20200522.70728a1
+# PyPI: https://pypi.org/project/catbuffer/
+# Test: https://test.pypi.org/project/catbuffer/
+
+artifactVersion="0.0.3"                         # Artifact version
+prereleaseSuffix="a1"                           # Pre-release suffix
+snapshotDateTime=".$(date -u +'%Y%m%d.%H%M%S')" # Pre-release timestamp
+prereleaseVersion="${artifactVersion}${snapshotDateTime}${prereleaseSuffix}"
 snapshot=true
 repo="pypi"
-upload=true   # convenient var to disable uploading of the artifact
+upload=true # convenient var to disable uploading of the artifact
 
-if [[ -z $1 ]]; then  # Use prerelease+snapshot(datetime) version
-  upload=false  # upload is set to false for zero arguments
+if [[ -z $1 ]]; then
+  artifactVersion="${prereleaseVersion}"
+  upload=false # upload is set to false for zero arguments; do build only
   echo "Zero arguments: Disable upload to PyPI"
-  artifactVersion="${artifactVersion}${prereleaseDateTime}${prereleaseVersion}"
-elif [[ $1 == "publish" ]]; then  # Use prerelease version
-  artifactVersion="${artifactVersion}${prereleaseVersion}"
-elif [[ $1 == "test" ]] || [[ $2 == "test" ]]; then # Use prerelease+snapshot(datetime) version
+elif [[ $1 == "publish" ]]; then
+  artifactVersion="${prereleaseVersion}"
+elif [[ $1 == "test" ]] || [[ $2 == "test" ]]; then
   repo="testpypi"
   REPO_URL="https://test.pypi.org/legacy/"
-  artifactVersion="${artifactVersion}${prereleaseDateTime}${prereleaseVersion}"
+  artifactVersion="${prereleaseVersion}"
 elif [[ $1 == "release" ]]; then
   snapshot=false
 fi
@@ -57,8 +62,8 @@ if [[ $upload == true ]] && [[ $repo == "pypi" ]] && [[ -n $TRAVIS_REPO_SLUG ]] 
   echo "User is not 'nemtech': Disable upload to PyPI"
 fi
 
-artifactProjectName="${artifactPrefix}-${artifactName}-python"
-artifactBuildDir="${rootDir}/build/${artifactProjectName}"
+artifactProjectName="catbuffer-python"
+artifactBuildDir="${rootDir}/build/python/${artifactProjectName}"
 artifactSrcDir="${artifactBuildDir}/src"
 artifactPackageDir="${artifactSrcDir}/${artifactPrefix}_${artifactName}"
 artifactTestDir="${artifactBuildDir}/test"
