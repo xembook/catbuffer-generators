@@ -4,6 +4,7 @@ VotingKeyLinkTransaction: ../coresystem
 VrfKeyLinkTransaction: ../coresystem
 
 AccountKeyLinkTransaction: account_link
+NodeKeyLinkTransaction: account_link
 
 AggregateCompleteTransaction: aggregate
 AggregateBondedTransaction: aggregate

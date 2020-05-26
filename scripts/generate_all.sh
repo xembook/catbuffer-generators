@@ -8,9 +8,14 @@ if [ "$#" -lt 1 ]; then
 	exit 1
 fi
 
-transaction_inputs=("${transaction_inputs}")
-
 builder="$1"
+transaction_inputs=("${transaction_inputs[@]}")
+if [ "${builder}" = "cpp_builder" ]; then
+	# "aggregate/aggregate" tracked by issue #26
+	delete=("aggregate/aggregate")
+	transaction_inputs=("${transaction_inputs[@]/${delete}}")
+fi
+
 if [ "$#" -lt 2 ]; then
 	PYTHONPATH=".:${PYTHONPATH}" generate_batch transaction_inputs "catbuffer" ${builder}
 else

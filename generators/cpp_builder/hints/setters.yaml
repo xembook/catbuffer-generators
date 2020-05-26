@@ -3,7 +3,7 @@
 # note, currently only fields with kind SIMPLE are supported
 
 MosaicDefinitionTransaction:
-  id: model::GenerateMosaicId(signerPublicKey(), m_nonce)
+  id: model::GenerateMosaicId(model::GetSignerAddress(*pTransaction), m_nonce)
 
 NamespaceRegistrationTransaction:
   # disable setter for discriminator
