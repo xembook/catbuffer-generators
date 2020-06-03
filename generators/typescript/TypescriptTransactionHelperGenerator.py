@@ -59,12 +59,12 @@ class TypescriptTransactionHelperGenerator():
         for name, value_comments in self.enum_list.items():
             # pylint: disable=unused-variable
             value, comments = value_comments
-            if (value != 0 and not name.upper().startswith('AGGREGATE') and self.embedded):
+            if (value != 0 and not name.upper().startswith('AGGREGATE') and self.embedded and not name.upper().startswith('BLOCK')):
                 builder_class = 'Embedded{0}'.format(''.join([a.capitalize() for a in name.split('_')]))
                 self._add_import(builder_class)
                 line += [indent('case EntityTypeDto.{0}:'.format(name), 3)]
                 line += [indent('return {0}.loadFromBinary(bytes);'.format(builder_class), 4)]
-            elif (value != 0 and not self.embedded):
+            elif (value != 0 and not self.embedded) and not name.upper().startswith('BLOCK'):
                 builder_class = '{0}'.format(''.join([a.capitalize() for a in name.split('_')]))
                 self._add_import(builder_class)
                 line += [indent('case EntityTypeDto.{0}:'.format(name), 3)]
