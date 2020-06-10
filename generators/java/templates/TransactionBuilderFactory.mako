@@ -19,8 +19,7 @@ public class TransactionBuilderFactory {
         layout = generator.schema[name].get("layout", [{type:""}])
         entityTypeValue = next(iter([x for x in layout if x.get('type','') == 'EntityType']),{}).get('value',0)
     %>\
-    %if (entityTypeValue > 0 and 'Aggregate' not in name):
-
+    %if (entityTypeValue > 0 and 'Aggregate' not in name and 'Block' not in name):
         if (headerBuilder.getType().getValue() == ${entityTypeValue}) {
             ${name}BodyBuilder bodyBuilder = ${name}BodyBuilder.loadFromBinary(stream);
             SequenceInputStream concatenate = new SequenceInputStream(
@@ -34,7 +33,7 @@ public class TransactionBuilderFactory {
     }
 
     /**
-    * It creates the rigth transaction builder from the stream data.
+    * It creates the right transaction builder from the stream data.
     *
     * @param stream the stream
     * @return the TransactionBuilder subclass
@@ -47,8 +46,7 @@ public class TransactionBuilderFactory {
         layout = generator.schema[name].get("layout", [{type:""}])
         entityTypeValue = next(iter([x for x in layout if x.get('type','') == 'EntityType']),{}).get('value',0)
     %>\
-    %if (entityTypeValue > 0  and 'Aggregate' not in name):
-
+    %if (entityTypeValue > 0  and 'Aggregate' not in name and 'Block' not in name):
         if (headerBuilder.getType().getValue() == ${entityTypeValue}) {
             ${name}BodyBuilder bodyBuilder = ${name}BodyBuilder.loadFromBinary(stream);
             SequenceInputStream concatenate = new SequenceInputStream(
@@ -56,8 +54,7 @@ public class TransactionBuilderFactory {
             new ByteArrayInputStream(bodyBuilder.serialize()));
             return ${name}Builder.loadFromBinary(new DataInputStream(concatenate));
         }
-    %elif (entityTypeValue > 0):
-
+    %elif (entityTypeValue > 0 and 'Block' not in name):
         if (headerBuilder.getType().getValue() == ${entityTypeValue}) {
             AggregateTransactionBodyBuilder bodyBuilder = AggregateTransactionBodyBuilder.loadFromBinary(stream);
             SequenceInputStream concatenate = new SequenceInputStream(

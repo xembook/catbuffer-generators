@@ -143,7 +143,7 @@ public class ${generator.generated_class_name}${(' extends ' + str(generator.gen
      *
      * @return ${helper.capitalize_first_character(a.attribute_comment)}.
      */
-    public ${a.attribute_var_type} get${helper.capitalize_first_character(a.attribute_name) if a.attribute_name != 'size' else 'StreamSize'}() {
+    ${'private' if a.attribute_is_reserved else 'public'} ${a.attribute_var_type} get${helper.capitalize_first_character(a.attribute_name) if a.attribute_name != 'size' else 'StreamSize'}() {
     % if a.attribute_is_conditional and not a.attribute_is_inline:
         if (!(this.${renderCondition(a) | trim})) {
             throw new java.lang.IllegalStateException("${a.attribute['condition']} is not set to ${helper.create_enum_name(a.attribute['condition_value'])}.");
