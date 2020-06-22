@@ -4,7 +4,7 @@ set -e
 rootDir="$(dirname $0)/.."
 
 ARTIFACT_NAME="catbuffer-typescript"
-RELEASE_VERSION="0.0.20"
+RELEASE_VERSION="0.0.21"
 ALPHA_VERSION="${RELEASE_VERSION}-alpha-$(date +%Y%m%d%H%M)"
 CURRENT_VERSION="$ALPHA_VERSION"
 if [[ $1 == "release" ]]; then
