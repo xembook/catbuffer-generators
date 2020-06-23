@@ -242,6 +242,7 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
                 or name.startswith('Metadata')
                 or name.startswith('HeightActivity')
                 or name.startswith('ImportanceSnapshot')
+                or name.startswith('PinnedVotingKey')
                 or 'VrfProof' in name
                 or 'Namespace' in name
                 or 'Restrict' in name
