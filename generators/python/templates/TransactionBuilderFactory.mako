@@ -7,20 +7,18 @@ from .EmbeddedTransactionBuilder import EmbeddedTransactionBuilder
     layout = generator.schema[name].get("layout", [{type:""}])
     entityTypeValue = next(iter([x for x in layout if x.get('type','') == 'EntityType']),{}).get('value',0)
 %>\
-% if entityTypeValue > 0 and 'Aggregate' not in name:
+% if entityTypeValue > 0 and 'Aggregate' not in name and 'Block' not in name:
 from .Embedded${name}Builder import Embedded${name}Builder
 % endif
 % endfor
 # Imports for creating transaction builders
 from .TransactionBuilder import TransactionBuilder
-from .AggregateBondedTransactionBuilder import AggregateBondedTransactionBuilder
-from .AggregateCompleteTransactionBuilder import AggregateCompleteTransactionBuilder
 % for name in sorted(generator.schema):
 <%
     layout = generator.schema[name].get("layout", [{type:""}])
     entityTypeValue = next(iter([x for x in layout if x.get('type','') == 'EntityType']),{}).get('value',0)
 %>\
-% if entityTypeValue > 0 and 'Aggregate' not in name:
+% if entityTypeValue > 0 and 'Block' not in name:
 from .${name}Builder import ${name}Builder
 % endif
 % endfor
@@ -52,7 +50,7 @@ class TransactionBuilderFactory:
     layout = generator.schema[name].get("layout", [{type:""}])
     entityTypeValue = next(iter([x for x in layout if x.get('type','') == 'EntityType']),{}).get('value',0)
 %>\
-% if entityTypeValue > 0 and 'Aggregate' not in name:
+% if entityTypeValue > 0 and 'Aggregate' not in name and 'Block' not in name:
         if entityType == ${entityTypeValue}:
             return Embedded${name}Builder.loadFromBinary(payload)
 % endif
@@ -75,7 +73,7 @@ class TransactionBuilderFactory:
     layout = generator.schema[name].get("layout", [{type:""}])
     entityTypeValue = next(iter([x for x in layout if x.get('type','') == 'EntityType']),{}).get('value',0)
 %>\
-    % if (entityTypeValue > 0):
+    % if entityTypeValue > 0 and 'Block' not in name:
         if entityType == ${entityTypeValue}:
             return ${name}Builder.loadFromBinary(payload)
     % endif
