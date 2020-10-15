@@ -25,27 +25,29 @@ artifactName="catbuffer"
 # PyPI: https://pypi.org/project/catbuffer/
 # Test: https://test.pypi.org/project/catbuffer/
 
-artifactVersion="0.0.3"                         # Artifact version
+releaseArtifactVersion="$(head -n 1 ${rootDir}/version.txt)" # Artifact version
 prereleaseSuffix="a1"                           # Pre-release suffix
 snapshotDateTime=".$(date -u +'%Y%m%d.%H%M%S')" # Pre-release timestamp
-prereleaseVersion="${artifactVersion}${snapshotDateTime}${prereleaseSuffix}"
+prereleaseVersion="${releaseArtifactVersion}${snapshotDateTime}${prereleaseSuffix}"
 snapshot=true
 repo="pypi"
-upload=true # convenient var to disable uploading of the artifact
+upload=false
+OPERATION="$1"
+artifactVersion="${prereleaseVersion}"
 
-if [[ -z $1 ]]; then
-  artifactVersion="${prereleaseVersion}"
-  upload=false # upload is set to false for zero arguments; do build only
-  echo "Zero arguments: Disable upload to PyPI"
-elif [[ $1 == "publish" ]]; then
-  artifactVersion="${prereleaseVersion}"
-elif [[ $1 == "test" ]] || [[ $2 == "test" ]]; then
+if [[ $OPERATION == "publish" ]]; then
+  upload=true
+elif [[ $OPERATION == "test" ]]; then
   repo="testpypi"
   REPO_URL="https://test.pypi.org/legacy/"
-  artifactVersion="${prereleaseVersion}"
-elif [[ $1 == "release" ]]; then
+  upload=true
+elif [[ $OPERATION == "release" ]]; then
+  artifactVersion="${releaseArtifactVersion}"
   snapshot=false
+  upload=true
 fi
+
+echo "Building Python version $artifactVersion, operation $OPERATIO"
 
 echo "artifactName=${artifactName}"
 echo "artifactVersion=${artifactVersion}"
@@ -107,7 +109,7 @@ PYTHONPATH="./src:${PYTHONPATH}" pylint --rcfile .pylintrc --load-plugins pylint
 # Deploy
 if [[ $upload == true ]]; then
   # Log intention
-  if [[ $1 == "release" ]]; then
+  if [[ $OPERATION == "release" ]]; then
     echo "Releasing python artifact[$artifactName $artifactVersion] to $repo"
   else
     echo "Publishing python artifact[$artifactName $artifactVersion] to $repo"
