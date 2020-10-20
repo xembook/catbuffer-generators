@@ -34,3 +34,11 @@ jobs:
     - stage: post release
       script: /bin/bash travis/travis-functions.sh post_release_version_file
       if: branch = env(RELEASE_BRANCH) AND type != pull_request AND (commit_message = release OR env(RELEASE_BRANCH) != env(DEV_BRANCH))
+before_install:
+  - |
+    if [ -z "${signingKeyId}" ]; then
+      echo "No signing the artifacts"
+    else
+      echo "Signing artifacts"
+      openssl aes-256-cbc -K $encrypted_37d6c1a7ee80_key -iv $encrypted_37d6c1a7ee80_iv -in travis/symbol-sdk-java.gpg.enc -out symbol-sdk-java.gpg -d
+    fi

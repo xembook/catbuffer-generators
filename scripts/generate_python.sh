@@ -47,7 +47,7 @@ elif [[ $OPERATION == "release" ]]; then
   upload=true
 fi
 
-echo "Building Python version $artifactVersion, operation $OPERATIO"
+echo "Building Python version $artifactVersion, operation $OPERATION"
 
 echo "artifactName=${artifactName}"
 echo "artifactVersion=${artifactVersion}"
