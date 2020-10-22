@@ -25,11 +25,11 @@ increment_version ()
   echo -e "${new// /.}"
 }
 
-
 log_env_variables(){
   echo "DEV_BRANCH = $DEV_BRANCH"
-  echo "POST_RELEASE_BRANCH = $POST_RELEASE_BRANCH"
   echo "RELEASE_BRANCH = $RELEASE_BRANCH"
+  echo "POST_RELEASE_BRANCH = $POST_RELEASE_BRANCH"
+  echo "RELEASE_MESSAGE = $RELEASE_MESSAGE"
   echo "REMOTE_NAME = $REMOTE_NAME"
   echo "DOCKER_IMAGE_NAME = $DOCKER_IMAGE_NAME"
   echo "TRAVIS_EVENT_TYPE = $TRAVIS_EVENT_TYPE"
@@ -50,21 +50,6 @@ validate_env_variables(){
   validate_env_variable "TRAVIS_COMMIT_MESSAGE" "$FUNCNAME"
 }
 
-resolve_operation ()
-{
-  OPERATION="build"
-  if [[ ("$TRAVIS_COMMIT_MESSAGE" == "release" ||  "$DEV_BRANCH" != "$RELEASE_BRANCH" ) && "$TRAVIS_EVENT_TYPE" != "pull_request"  && "$TRAVIS_BRANCH" == "$RELEASE_BRANCH" ]];
-   then
-     OPERATION="release"
-   else
-       if [ "$TRAVIS_EVENT_TYPE" != "pull_request" ] && [ "$TRAVIS_BRANCH" == "$DEV_BRANCH" ];
-     then
-       OPERATION="publish"
-    fi
-  fi
-  echo -e "$OPERATION"
-}
-
 validate_env_variable ()
 {
   var="$1"
@@ -74,6 +59,18 @@ validate_env_variable ()
       exit 128
   fi
 }
+
+assert_value ()
+{
+  value="$1"
+  expectedValue="$2"
+  if [ "$value" != "$expectedValue" ]
+    then
+      echo "'$value' is not the expected value '$expectedValue'"
+      exit 128
+  fi
+}
+
 
 
 checkout_branch ()
@@ -99,7 +96,6 @@ load_version_from_file(){
   VERSION="$(head -n 1 version.txt)"
   echo -e "$VERSION"
 }
-
 
 post_release_version_file(){
 
@@ -129,11 +125,42 @@ post_release_version_file(){
 
 }
 
+
+push_github_pages(){
+
+  VERSION="$1"
+  DOCS_PATH="$2"
+  PUBLICATION_BRANCH=gh-pages
+  REPO_PATH=$PWD
+
+  validate_env_variable "VERSION" "$FUNCNAME"
+  validate_env_variable "PUBLICATION_BRANCH" "$FUNCNAME"
+  validate_env_variable "DOCS_PATH" "$FUNCNAME"
+  validate_env_variable "GITHUB_TOKEN" "$FUNCNAME"
+  validate_env_variable "TRAVIS_REPO_SLUG" "$FUNCNAME"
+  validate_env_variable "REPO_PATH" "$FUNCNAME"
+
+  # Checkout the branch
+  rm -rf $HOME/publish
+  cd $HOME
+  git clone --branch=$PUBLICATION_BRANCH    https://${GITHUB_TOKEN}@github.com/$TRAVIS_REPO_SLUG publish 2>&1 > /dev/null
+  cd publish
+  # Update pages
+
+  cp -r $REPO_PATH/${DOCS_PATH}. ./
+  # Commit and push latest version
+  git add .
+  git config user.name  "Travis"
+  git config user.email "travis@travis-ci.org"
+  git diff-index --quiet HEAD || git commit -m "Uploading $VERSION docs."
+  git push -fq origin $PUBLICATION_BRANCH 2>&1 > /dev/null
+  cd $REPO_PATH
+
+}
+
 if [ "$1" == "post_release_version_file" ];then
     post_release_version_file
 fi
-
-
 
 
 
