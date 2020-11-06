@@ -54,10 +54,16 @@ public class ${generator.generated_class_name}${(' extends ' + str(generator.gen
     % for a in set([(a.attribute['condition'], a.attribute_size, a.conditional_read_before) for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_inline and a.conditional_read_before and a.attribute_is_conditional]):
             final ${helper.get_builtin_type(a[1])} ${a[0]}Condition = ${helper.get_reverse_method_name(a[1]).format('stream.' + helper.get_read_method_name(a[1]) + '()')};
     % endfor
-    % for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_inline and not a.attribute_is_conditional]:
+    % for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_inline and not a.conditional_read_before]:
+        %if a.attribute_is_conditional:
+            if (this.${renderCondition(a) | trim}) {
+                ${renderReader(a) | trim}
+            }
+            % else:
             ${renderReader(a) | trim}
+        %endif
     % endfor
-    % for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_inline and a.attribute_is_conditional]:
+    % for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_inline and a.conditional_read_before]:
             if (this.${renderCondition(a) | trim}) {
                 ${renderReader(a) | trim}
             }

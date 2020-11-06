@@ -12,6 +12,8 @@ cache:
   directories:
   - "$HOME/.gradle/caches/"
   - "$HOME/.gradle/wrapper/"
+  - "$HOME/.cache/pip"
+  - "$HOME/.npm"
 install:
     - pip install -r requirements.txt
 env:
@@ -22,6 +24,8 @@ env:
     - RELEASE_MESSAGE=release
 before_script:
   - export PYTHONPATH=$PYTHONPATH:./catbuffer
+  - nvm install --lts
+  - node --version
 script:
   - . ./travis/travis-functions.sh
   - validate_env_variables

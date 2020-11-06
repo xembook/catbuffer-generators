@@ -188,10 +188,12 @@ class Helper(ABC):
         attribute_size = attribute['size']
 
         if isinstance(attribute_size, str):
-            if attribute_size.endswith('Size'):
+            if attribute_type == 'byte':
                 return AttributeKind.BUFFER
-            if attribute_size.endswith('Count'):
-                return AttributeKind.ARRAY
+            return AttributeKind.ARRAY
+
+        if isinstance(attribute_size, int) and not attribute_type == 'byte':
+            return AttributeKind.ARRAY
 
         if self.is_builtin_type(attribute_type, attribute_size):
             return AttributeKind.SIMPLE

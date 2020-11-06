@@ -40,7 +40,7 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
         return 'disposition' in attribute and attribute['disposition'] == TypeDescriptorDisposition.Inline.value
 
     def _find_base_callback(self, attribute):
-        if self._is_inline_class(attribute) and self.check_should_generate_class(attribute['type']):
+        if self._is_inline_class(attribute) and self.should_generate_class(attribute['type']):
             self.base_class_name = attribute['type']
             self.finalized_class = True
             return True
@@ -232,28 +232,8 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
         return 'create' + capitalize_first_character(condition_value)
 
     @staticmethod
-    def check_should_generate_class(name):
-        return ((name.startswith('Embedded') and not name.endswith('Header'))
-                or 'Mosaic' in name
-                or name.startswith('Account')
-                or name.startswith('Address')
-                or name.startswith('Global')
-                or name.startswith('Multisig')
-                or name.startswith('Metadata')
-                or name.startswith('HeightActivity')
-                or name.startswith('ImportanceSnapshot')
-                or name.startswith('PinnedVotingKey')
-                or 'VrfProof' in name
-                or 'Namespace' in name
-                or 'Restrict' in name
-                or 'Lock' in name
-                or name.endswith('Info')
-                or name.startswith('Block')
-                or name.endswith('Transaction')
-                or (name.endswith('Body') and name != 'EntityBody')
-                or 'Receipt' in name
-                or name.endswith('Modification')
-                or name.endswith('Cosignature'))
+    def should_generate_class(name):
+        return name not in ('SizePrefixedEntity', 'VerifiableEntity', 'EntityBody', 'EmbeddedTransactionHeader', 'TransactionHeader')
 
     def _add_size_values(self, attribute, method_writer):
         attribute_kind = get_real_attribute_type(attribute)
@@ -306,7 +286,7 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
         return type_name[0].lower() + type_name[1:]
 
     def _recursive_attribute_iterator(self, class_name, callback, context, ignore_inline_class):
-        generated_class = (class_name != self.name and self.check_should_generate_class(class_name))
+        generated_class = (class_name != self.name and self.should_generate_class(class_name))
         for attribute_val in self.schema[class_name]['layout']:
             if generated_class:
                 attribute_val['aggregate_class'] = class_name
@@ -314,7 +294,7 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
             if 'disposition' in attribute_val:
                 inline_class_type = attribute_val['type']
                 if attribute_val['disposition'] == TypeDescriptorDisposition.Inline.value:
-                    if self.check_should_generate_class(inline_class_type):
+                    if self.should_generate_class(inline_class_type):
                         # Class was grenerated so it can be declare aggregate
                         attribute_val['name'] = self._get_fromatted_type_name(inline_class_type)
                         if (self.base_class_name == inline_class_type and
@@ -382,7 +362,11 @@ class TypescriptClassGenerator(TypescriptGeneratorBase):
 
     def _load_from_binary_array(self, attribute, load_from_binary_method):
         attribute_typename = attribute['type']
-        attribute_sizename = '(Array.isArray({0}) ? GeneratorUtils.compact({0}) : {0})'.format(attribute['size'])
+        attribute_size = attribute['size']
+        if isinstance(attribute_size, str):
+            attribute_sizename = '(Array.isArray({0}) ? GeneratorUtils.compact({0}) : {0})'.format(attribute_size)
+        else:
+            attribute_sizename = '{0}'.format(attribute_size)
         attribute_name = attribute['name']
         var_type = get_generated_type(self.schema, attribute)
         load_from_binary_method.add_instructions(['const {0}{1} = []'

@@ -73,15 +73,14 @@ artifactTestDir="${artifactBuildDir}/test"
 rm -rf "${rootDir}/catbuffer/_generated/python"
 rm -rf "${artifactBuildDir}"
 
+mkdir -p "${artifactPackageDir}"
 PYTHONPATH=".:${PYTHONPATH}" python3 "catbuffer/main.py" \
   --schema catbuffer/schemas/all.cats \
   --include catbuffer/schemas \
-  --output "catbuffer/_generated" \
+  --output "${artifactPackageDir}" \
   --generator python \
   --copyright catbuffer/HEADER.inc
 
-mkdir -p "${artifactPackageDir}"
-cp "$rootDir/catbuffer/_generated/python/"* "${artifactPackageDir}"
 touch "${artifactPackageDir}/__init__.py"
 cp "$rootDir/LICENSE" "${artifactBuildDir}"
 cp "$rootDir/.pylintrc" "${artifactBuildDir}"

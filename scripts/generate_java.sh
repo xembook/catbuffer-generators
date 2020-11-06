@@ -14,13 +14,13 @@ fi
 
 echo "Building Java version $CURRENT_VERSION, operation $OPERATION"
 
-rm -rf "${rootDir}/catbuffer/_generated/java"
-rm -rf "$rootDir/build/java/$ARTIFACT_NAME"
+#rm -rf "$rootDir/build/java/$ARTIFACT_NAME"
 
+mkdir -p "$rootDir/build/java/$ARTIFACT_NAME/src/main/java/io/nem/symbol/catapult/builders"
 PYTHONPATH=".:${PYTHONPATH}" python3 "catbuffer/main.py" \
   --schema catbuffer/schemas/all.cats \
   --include catbuffer/schemas \
-  --output "catbuffer/_generated" \
+  --output "$rootDir/build/java/$ARTIFACT_NAME/src/main/java/io/nem/symbol/catapult/builders" \
   --generator java \
   --copyright catbuffer/HEADER.inc
 
@@ -28,21 +28,25 @@ if [[ $OPERATION == "release" ]]; then
   ARTIFACT_VERSION="${ARTIFACT_VERSION%$SNAPSHOT_PREFIX}"
 fi
 
-mkdir -p "$rootDir/build/java/$ARTIFACT_NAME/src/main/java/io/nem/symbol/catapult/builders/"
-cp "$rootDir/catbuffer/_generated/java/"* "$rootDir/build/java/$ARTIFACT_NAME/src/main/java/io/nem/symbol/catapult/builders/"
-cp "$rootDir/generators/java/build.gradle" "$rootDir/build/java/$ARTIFACT_NAME/"
-cp "$rootDir/generators/java/settings.gradle" "$rootDir/build/java/$ARTIFACT_NAME/"
+mkdir -p "$rootDir/build/java/$ARTIFACT_NAME/src/test/java/io/nem/symbol/catapult/builders"
+mkdir -p "$rootDir/build/java/$ARTIFACT_NAME/src/test/resources"
+cp -r "$rootDir/test/vector" "$rootDir/build/java/$ARTIFACT_NAME/src/test/resources"
+cp "$rootDir/generators/java/VectorTest.java" "$rootDir/build/java/$ARTIFACT_NAME/src/test/java/io/nem/symbol/catapult/builders"
+
+
+cp "$rootDir/generators/java/build.gradle" "$rootDir/build/java/$ARTIFACT_NAME"
+cp "$rootDir/generators/java/settings.gradle" "$rootDir/build/java/$ARTIFACT_NAME"
 
 sed -i -e "s/#artifactName/$ARTIFACT_NAME/g" "$rootDir/build/java/$ARTIFACT_NAME/settings.gradle"
 sed -i -e "s/#artifactVersion/$CURRENT_VERSION/g" "$rootDir/build/java/$ARTIFACT_NAME/build.gradle"
 
 if [[ $OPERATION == "release" ]]; then
   echo "Releasing artifact $CURRENT_VERSION"
-  $rootDir/gradlew -p "$rootDir/build/java/$ARTIFACT_NAME/" publish closeAndReleaseRepository
+  $rootDir/gradlew -p "$rootDir/build/java/$ARTIFACT_NAME/" test publish closeAndReleaseRepository
 elif [[ $OPERATION == "publish" ]]; then
   echo "Publishing artifact $CURRENT_VERSION"
-  $rootDir/gradlew -p "$rootDir/build/java/$ARTIFACT_NAME/" publish
+  $rootDir/gradlew -p "$rootDir/build/java/$ARTIFACT_NAME/" test publish
 else
   echo "Installing artifact $CURRENT_VERSION"
-  $rootDir/gradlew -p "$rootDir/build/java/$ARTIFACT_NAME/" install
+  $rootDir/gradlew -p "$rootDir/build/java/$ARTIFACT_NAME/" test install
 fi
