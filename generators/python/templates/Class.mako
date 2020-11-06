@@ -126,10 +126,17 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
     % for a in set([(a.attribute['condition'], a.attribute_size, a.conditional_read_before) for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_inline and a.conditional_read_before and a.attribute_is_conditional]):
         ${a[0]}Condition = bytes_[0:${a[1]}]
     % endfor
-    % for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_inline and not a.attribute_is_conditional]:
+
+    % for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_inline and not a.conditional_read_before]:
+        %if a.attribute_is_conditional:
+        ${a.attribute_name} = None
+        if ${renderCondition(a, useSelf=False) | trim}:
+            ${renderReader(a) | trim}
+        % else:
         ${renderReader(a) | trim}
+        %endif
     % endfor
-    % for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_inline and a.attribute_is_conditional]:
+    % for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_inline and a.conditional_read_before]:
         ${a.attribute_name} = None
         if ${renderCondition(a, useSelf=False) | trim}:
             ${renderReader(a) | trim}

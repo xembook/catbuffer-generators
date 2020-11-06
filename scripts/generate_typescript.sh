@@ -14,27 +14,29 @@ fi
 
 echo "Building Typescript version $CURRENT_VERSION, operation $OPERATION"
 
-rm -rf "${rootDir}/catbuffer/_generated/typescript"
-rm -rf "$rootDir/build/typescript/$ARTIFACT_NAME"
+#rm -rf "$rootDir/build/typescript/$ARTIFACT_NAME"
 
+mkdir -p "$rootDir/build/typescript/$ARTIFACT_NAME/src/"
 PYTHONPATH=".:${PYTHONPATH}" python3 "catbuffer/main.py" \
   --schema catbuffer/schemas/all.cats \
   --include catbuffer/schemas \
-  --output "catbuffer/_generated" \
+  --output "$rootDir/build/typescript/$ARTIFACT_NAME/src" \
   --generator typescript \
   --copyright catbuffer/HEADER.inc
 
-mkdir -p "$rootDir/build/typescript/$ARTIFACT_NAME/src/"
-cp "$rootDir/catbuffer/_generated/typescript/"* "$rootDir/build/typescript/$ARTIFACT_NAME/src/"
-cp "$rootDir/generators/typescript/.npmignore" "$rootDir/build/typescript/$ARTIFACT_NAME/"
-cp "$rootDir/generators/typescript/package.json" "$rootDir/build/typescript/$ARTIFACT_NAME/"
-cp "$rootDir/generators/typescript/README.md" "$rootDir/build/typescript/$ARTIFACT_NAME/"
-cp "$rootDir/generators/typescript/tsconfig.json" "$rootDir/build/typescript/$ARTIFACT_NAME/"
+mkdir -p "$rootDir/build/typescript/$ARTIFACT_NAME/test/vector"
+cp -r "$rootDir/test/vector" "$rootDir/build/typescript/$ARTIFACT_NAME/test"
+cp "$rootDir/generators/typescript/VectorTest.test.ts" "$rootDir/build/typescript/$ARTIFACT_NAME/test"
+
+cp "$rootDir/generators/typescript/.npmignore" "$rootDir/build/typescript/$ARTIFACT_NAME"
+cp "$rootDir/generators/typescript/package.json" "$rootDir/build/typescript/$ARTIFACT_NAME"
+cp "$rootDir/generators/typescript/README.md" "$rootDir/build/typescript/$ARTIFACT_NAME"
+cp "$rootDir/generators/typescript/tsconfig.json" "$rootDir/build/typescript/$ARTIFACT_NAME"
 sed -i -e "s/#artifactName/$ARTIFACT_NAME/g" "$rootDir/build/typescript/$ARTIFACT_NAME/package.json"
 sed -i -e "s/#artifactVersion/$CURRENT_VERSION/g" "$rootDir/build/typescript/$ARTIFACT_NAME/package.json"
 
-npm install --prefix "$rootDir/build/typescript/$ARTIFACT_NAME/"
-npm run build --prefix "$rootDir/build/typescript/$ARTIFACT_NAME/"
+cd "$rootDir/build/typescript/$ARTIFACT_NAME"
+npm install && npm run build && npm run test
 
 if [[ $OPERATION == "release" ]]; then
   echo "Releasing artifact $CURRENT_VERSION"

@@ -17,6 +17,7 @@ repositories {
 
 dependencies {
     testCompile 'org.bouncycastle:bcprov-jdk15on:1.58'
+    testCompile group: 'org.yaml', name: 'snakeyaml', version: '1.27'
     testImplementation(platform("org.junit:junit-bom:5.4.0"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.4.0")
 }
@@ -39,6 +40,10 @@ allprojects {
     ext."signing.keyId" = signingKeyId
     ext."signing.secretKeyRingFile" = signingSecretKeyRingFile
     ext."signing.password" = signingPassword
+}
+
+test {
+    useJUnitPlatform()
 }
 
 sourceCompatibility = '1.8'

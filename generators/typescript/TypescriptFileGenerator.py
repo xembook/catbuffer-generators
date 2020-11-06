@@ -67,7 +67,7 @@ class TypescriptFileGenerator:
                                                                                                    self.schema, value)
 
             elif is_struct_type(attribute_type):
-                if TypescriptClassGenerator.check_should_generate_class(type_descriptor):
+                if TypescriptClassGenerator.should_generate_class(type_descriptor):
                     new_class = TypescriptClassGenerator(type_descriptor, self.schema, value,
                                                          TypescriptFileGenerator.enum_class_list)
                     self.update_code(new_class)
@@ -79,6 +79,7 @@ class TypescriptFileGenerator:
             self._initialize_class()
             self.set_import()
             self.code += [''] + enum_class.generate()
+            fileNames.append(enum_class.get_generated_name())
             yield self.code, enum_class.get_generated_name()
 
             # wirte embedded transaction helper

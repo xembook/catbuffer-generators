@@ -19,7 +19,8 @@ def get_attribute_property_equal(schema, attribute_list, attribute_name, attribu
             return current_attribute
         if (recurse and 'disposition' in current_attribute and
                 current_attribute['disposition'] == TypeDescriptorDisposition.Inline.value):
-            value = get_attribute_property_equal(schema, schema[current_attribute['type']]['layout'], attribute_name, attribute_value)
+            value = get_attribute_property_equal(schema, schema[current_attribute['type']]['layout'], attribute_name,
+                                                 attribute_value)
             if value is not None:
                 return value
     return None
@@ -171,12 +172,29 @@ class AttributeType(Enum):
 
 
 def get_attribute_size(schema, attribute_value):
-    if 'size' not in attribute_value and not is_byte_type(attribute_value['type']) and not is_enum_type(attribute_value['type']):
+    if 'size' not in attribute_value and not is_byte_type(attribute_value['type']) and not is_enum_type(
+            attribute_value['type']):
         attr = schema[attribute_value['type']]
         if 'size' in attr:
             return attr['size']
         return 1
     return attribute_value['size']
+
+
+def get_real_attribute_type_when_size(attribute):
+    attribute_type = attribute['type']
+    attribute_size = attribute['size']
+    if isinstance(attribute_size, str):
+        if attribute_type == 'byte':
+            return AttributeType.BUFFER
+        return AttributeType.ARRAY
+
+    if isinstance(attribute_size, int) and not attribute_type == 'byte':
+        return AttributeType.ARRAY
+
+    if is_builtin_type(attribute_type, attribute_size):
+        return AttributeType.SIMPLE
+    return AttributeType.BUFFER
 
 
 def get_real_attribute_type(attribute):
@@ -192,21 +210,12 @@ def get_real_attribute_type(attribute):
         return real_type
 
     if 'size' in attribute:
-        attribute_size = attribute['size']
-        att_kind = AttributeType.BUFFER
-        if isinstance(attribute_size, str):
-            if attribute_size.endswith('Size'):
-                att_kind = AttributeType.BUFFER
-            if attribute_size.endswith('Count'):
-                att_kind = AttributeType.ARRAY
-            return att_kind
-        if is_builtin_type(attribute_type, attribute_size):
-            return AttributeType.SIMPLE
+        return get_real_attribute_type_when_size(attribute)
+
     return AttributeType.BUFFER
 
 
 def get_type_by_attribute(attribute):
-
     if is_var_array(attribute):
         # disabled temporary before fixing Embedded transaction deserialization issue
         return AttributeType.VAR_ARRAY
