@@ -35,8 +35,9 @@ cp "$rootDir/generators/typescript/tsconfig.json" "$rootDir/build/typescript/$AR
 sed -i -e "s/#artifactName/$ARTIFACT_NAME/g" "$rootDir/build/typescript/$ARTIFACT_NAME/package.json"
 sed -i -e "s/#artifactVersion/$CURRENT_VERSION/g" "$rootDir/build/typescript/$ARTIFACT_NAME/package.json"
 
-cd "$rootDir/build/typescript/$ARTIFACT_NAME"
-npm install && npm run build && npm run test
+npm install --prefix "$rootDir/build/typescript/$ARTIFACT_NAME/"
+npm run test --prefix "$rootDir/build/typescript/$ARTIFACT_NAME/"
+npm run build --prefix "$rootDir/build/typescript/$ARTIFACT_NAME/"
 
 if [[ $OPERATION == "release" ]]; then
   echo "Releasing artifact $CURRENT_VERSION"
