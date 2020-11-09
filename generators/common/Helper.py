@@ -55,6 +55,16 @@ class Helper(ABC):
         return typename == TypeDescriptorType.Byte.value
 
     @staticmethod
+    def resolve_alignment(a):
+        embedded = a.attribute is not None and 'type' in a.attribute and a.attribute[
+            'type'] == 'EmbeddedTransaction'
+        parent_embedded = a.parent_attribute is not None and 'type' in a.parent_attribute and a.parent_attribute[
+            'type'] == 'EmbeddedTransaction'
+        if embedded or parent_embedded:
+            return 8
+        return 0
+
+    @staticmethod
     def is_inline_type(attribute):
         return 'disposition' in attribute and attribute['disposition'] == TypeDescriptorDisposition.Inline.value
 
@@ -87,16 +97,21 @@ class Helper(ABC):
         return 'condition' in attribute
 
     @staticmethod
-    def is_attribute_count_size_field(attribute):
-        return (attribute['name'].endswith('Size') or
-                (attribute['name'].endswith('Count') and 'beneficiaryCount' not in attribute['name']))
+    def is_attribute_count_size_field(attribute, class_attributes):
+        if class_attributes is None:
+            return False
+        attribute_name = attribute['name']
+        is_size_of_class_attributes = list(
+            filter(lambda a: 'size' in a and a['size'] == attribute_name, class_attributes))
+        return len(is_size_of_class_attributes) == 1
 
     @staticmethod
     def should_generate_class(name):
         # subclassees may override this method if the language is not ready to generate all the classes
         # I need to exclude due to the ReceiptBuilder hack of not serializing the size
         # Also, SizePrefixedEntity needs to go first, not VerifiableEntity or EntityBody the way we handle super classes.
-        return name not in ('SizePrefixedEntity', 'VerifiableEntity', 'EntityBody')
+        return name not in ('SizePrefixedEntity', 'VerifiableEntity', 'EntityBody', 'EmbeddedTransactionHeader',
+                            'TransactionHeader')
         # return True
 
     @staticmethod
@@ -167,14 +182,14 @@ class Helper(ABC):
         return string if not string else string[0] + ''.join('_' + x if x.isupper() else x for x in string[1:])
 
     # pylint: disable=R0911
-    def get_attribute_kind(self, attribute):
+    def get_attribute_kind(self, attribute, class_attributes):
         if self.is_var_array_type(attribute):
             return AttributeKind.VAR_ARRAY
         if self.is_fill_array_type(attribute):
             return AttributeKind.FILL_ARRAY
         if self.is_inline_class(attribute):
             return AttributeKind.CUSTOM
-        if self.is_attribute_count_size_field(attribute):
+        if self.is_attribute_count_size_field(attribute, class_attributes):
             return AttributeKind.SIZE_FIELD
 
         attribute_type = attribute['type']
@@ -233,5 +248,5 @@ class Helper(ABC):
         raise NotImplementedError('get_builtin_type must be overridden')
 
     @abstractmethod
-    def get_generated_type(self, schema, attribute):
+    def get_generated_type(self, schema, attribute, attribute_kind):
         raise NotImplementedError('get_generated_type must be overridden')

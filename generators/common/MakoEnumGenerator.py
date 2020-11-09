@@ -26,7 +26,7 @@ class MakoEnumGenerator(MakoStaticClassGenerator):
                 for attribute in entity_schema['layout']:
                     if attribute.get('disposition', None) == TypeDescriptorDisposition.Const.value and attribute.get(
                             'type', None) == self.name:
-                        enum_name = helper.get_generated_class_name(type_descriptor, entity_schema, schema)
+                        enum_name = type_descriptor
                         enum_comment = self.helper.get_comment_from_name(enum_name)
                         enum_value = attribute['value']
                         self._add_enum_value(enum_name, enum_value, enum_comment)

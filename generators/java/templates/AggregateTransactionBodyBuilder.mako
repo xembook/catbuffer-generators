@@ -29,7 +29,7 @@ public final class AggregateTransactionBodyBuilder implements Serializer {
             final DataInputStream dataInputStream =  new DataInputStream(new ByteArrayInputStream(transactionBytes.array()));
             this.transactions = new java.util.ArrayList<>();
             while (dataInputStream.available() > 0) {
-                EmbeddedTransactionBuilder embeddedTransactionBuilder = TransactionBuilderFactory.createEmbeddedTransactionBuilder(dataInputStream);
+                EmbeddedTransactionBuilder embeddedTransactionBuilder = EmbeddedTransactionBuilderHelper.loadFromBinary(dataInputStream);
                 transactions.add(embeddedTransactionBuilder);
                 GeneratorUtils.skipPadding(embeddedTransactionBuilder.getSize(), dataInputStream);
             }

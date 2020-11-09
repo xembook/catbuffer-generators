@@ -26,13 +26,13 @@ public class ${generator.generated_class_name}${(' extends ' + str(generator.gen
     % elif a.kind == helper.AttributeKind.SIZE_FIELD:
             final ${a.attribute_var_type} ${a.attribute_name} = ${helper.get_reverse_method_name(a.attribute_size).format('stream.' + helper.get_read_method_name(a.attribute_size) + '()')};
    % elif a.kind == helper.AttributeKind.ARRAY:
-            this.${a.attribute_name} = GeneratorUtils.loadFromBinaryArray(${a.attribute_class_name}::loadFromBinary, stream, ${a.attribute_size});
+            this.${a.attribute_name} = GeneratorUtils.loadFromBinaryArray(${helper.get_load_from_binary_factory(a.attribute_class_name)}::loadFromBinary, stream, ${a.attribute_size});
     % elif a.kind == helper.AttributeKind.CUSTOM and (not a.attribute_is_conditional or not a.conditional_read_before):
-            this.${a.attribute_name} = ${a.attribute_class_name}.loadFromBinary(stream);
+            this.${a.attribute_name} = ${helper.get_load_from_binary_factory(a.attribute_class_name)}.loadFromBinary(stream);
     % elif a.kind == helper.AttributeKind.CUSTOM:
-            this.${a.attribute_name} = new ${a.attribute_class_name}(${a.attribute['condition']}Condition);
+            this.${a.attribute_name} = new ${helper.get_load_from_binary_factory(a.attribute_class_name)}(${a.attribute['condition']}Condition);
     % elif a.kind == helper.AttributeKind.FILL_ARRAY:
-            this.${a.attribute_name} = GeneratorUtils.loadFromBinaryArray(${a.attribute_class_name}::loadFromBinary, stream, ${a.attribute_size});
+            this.${a.attribute_name} = GeneratorUtils.loadFromBinaryArray(${helper.get_load_from_binary_factory(a.attribute_class_name)}::loadFromBinary, stream, ${a.attribute_size});
     % elif a.kind == helper.AttributeKind.FLAGS:
             this.${a.attribute_name} = ${'GeneratorUtils.toSet({0}, {1})'.format(a.attribute_class_name + '.class', helper.get_reverse_method_name(a.attribute_size).format('stream.' + helper.get_read_method_name(a.attribute_size) + '()'))};
     % elif a.kind == helper.AttributeKind.VAR_ARRAY:
@@ -99,7 +99,7 @@ public class ${generator.generated_class_name}${(' extends ' + str(generator.gen
         super(${super_arguments_CSV});
     % endif
     % for a in [a for a in constructor_params if a.attribute_condition_value == None and not a.attribute_is_aggregate and not a.attribute_is_reserved and not a.attribute_name == 'size']:
-    % if a.attribute_is_conditional and not a.attribute_is_inline:
+    % if a.attribute_is_conditional:
         if (${renderCondition(a) | trim}) {
             GeneratorUtils.notNull(${a.attribute_name}, "${a.attribute_name} is null");
         }
