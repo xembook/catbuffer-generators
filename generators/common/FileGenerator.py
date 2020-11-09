@@ -31,7 +31,6 @@ class FileGenerator(ABC):
            them producing different files.
         :return:  multiple Descriptors using yield.
         """
-
         helper = self.create_helper()
         generators = []
         for type_name, class_schema in self.schema.items():

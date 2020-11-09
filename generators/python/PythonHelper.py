@@ -38,9 +38,8 @@ class PythonHelper(Helper):
             return '{1} in {0}'
         return '{0} == {1}'
 
-    def get_generated_type(self, schema, attribute):
+    def get_generated_type(self, schema, attribute, attribute_kind):
         typename = attribute['type']
-        attribute_kind = self.get_attribute_kind(attribute)
         if attribute_kind in (AttributeKind.SIMPLE, AttributeKind.SIZE_FIELD):
             return self.get_builtin_type(self.get_attribute_size(schema, attribute))
         if attribute_kind == AttributeKind.BUFFER:

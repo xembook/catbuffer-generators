@@ -2,6 +2,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
@@ -373,6 +375,58 @@ public final class GeneratorUtils {
         return collection.size();
     }
 
+    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+
+    /**
+     * Basic to hex function that converts a byte array to an hex
+     * @param bytes the bytes
+     * @return the hex representation.
+     */
+    public static String toHex(byte[] bytes) {
+        char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0; j < bytes.length; j++) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
+        }
+        return new String(hexChars);
+    }
+
+    /**
+     * Basic from hex to byte array function.
+     * @param hex the hex string
+     * @return the byte array.
+     */
+    public static byte[] hexToBytes(String hex) {
+        int len = hex.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
+                + Character.digit(hex.charAt(i + 1), 16));
+        }
+        return data;
+    }
+
+    /**
+     * It writes the builder into a file for future unit testing.
+     * @param <T> the type of the builder.
+     * @param builder the builder.
+     * @param file the file to append.
+     * @return the builder
+     */
+    public static <T extends Serializer> T writeBuilderToFile(T builder, String file) {
+        try (FileWriter writer = new FileWriter(new File(file), true)) {
+            String payload = toHex(builder.serialize());
+            String builderName = builder.getClass().getSimpleName();
+            writer.write("- builder: " + builderName + "\n");
+            writer.write("  payload: " + payload + "\n");
+            return builder;
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
 }
+
+
 
 

@@ -32,10 +32,13 @@ cp "$rootDir/generators/typescript/.npmignore" "$rootDir/build/typescript/$ARTIF
 cp "$rootDir/generators/typescript/package.json" "$rootDir/build/typescript/$ARTIFACT_NAME"
 cp "$rootDir/generators/typescript/README.md" "$rootDir/build/typescript/$ARTIFACT_NAME"
 cp "$rootDir/generators/typescript/tsconfig.json" "$rootDir/build/typescript/$ARTIFACT_NAME"
+cp "$rootDir/generators/typescript/.eslintrc.js" "$rootDir/build/typescript/$ARTIFACT_NAME"
+cp "$rootDir/generators/typescript/.prettierrc.js" "$rootDir/build/typescript/$ARTIFACT_NAME"
 sed -i -e "s/#artifactName/$ARTIFACT_NAME/g" "$rootDir/build/typescript/$ARTIFACT_NAME/package.json"
 sed -i -e "s/#artifactVersion/$CURRENT_VERSION/g" "$rootDir/build/typescript/$ARTIFACT_NAME/package.json"
 
 npm install --prefix "$rootDir/build/typescript/$ARTIFACT_NAME/"
+npm run style:fix --prefix "$rootDir/build/typescript/$ARTIFACT_NAME/"
 npm run test --prefix "$rootDir/build/typescript/$ARTIFACT_NAME/"
 npm run build --prefix "$rootDir/build/typescript/$ARTIFACT_NAME/"
 

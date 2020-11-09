@@ -22,6 +22,11 @@ class JavaHelper(Helper):
             method_name = type_size_method_name[size]
         return method_name
 
+    def get_load_from_binary_factory(self, attribute_class_name):
+        if attribute_class_name == 'EmbeddedTransactionBuilder':
+            return 'TransactionBuilderFactory'
+        return attribute_class_name
+
     def get_condition_operation_text(self, op):
         if op == 'has':
             return '{0}.contains({1})'
@@ -53,9 +58,8 @@ class JavaHelper(Helper):
             method_name = typesize_methodname[size]
         return method_name
 
-    def get_generated_type(self, schema, attribute):
+    def get_generated_type(self, schema, attribute, attribute_kind):
         typename = attribute['type']
-        attribute_kind = self.get_attribute_kind(attribute)
         if attribute_kind in (AttributeKind.SIMPLE, AttributeKind.SIZE_FIELD):
             return self.get_builtin_type(self.get_attribute_size(schema, attribute))
         if attribute_kind == AttributeKind.BUFFER:

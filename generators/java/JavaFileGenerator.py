@@ -14,7 +14,8 @@ class JavaFileGenerator(FileGenerator):
         return '../java/templates/'
 
     def get_static_templates_file_names(self):
-        return ['BitMaskable', 'GeneratorUtils', 'AggregateTransactionBodyBuilder', 'TransactionBuilderFactory',
+        return ['BitMaskable', 'GeneratorUtils', 'AggregateTransactionBodyBuilder', 'TransactionBuilderHelper',
+                'EmbeddedTransactionBuilderHelper',
                 'Serializer']
 
     def get_main_file_extension(self):

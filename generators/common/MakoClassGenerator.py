@@ -73,7 +73,8 @@ class MakoClassGenerator(MakoStaticClassGenerator):
     def _recurse_foreach_attribute(self, class_name: str, callback, aggregate_attribute=None, deep=0):
         print(str('\t' * deep) + '- ' + class_name)
         class_generated = (class_name != self.name and self.helper.should_generate_class(class_name))
-        for attribute in self.schema[class_name]['layout']:
+        class_attributes = self.schema[class_name]['layout']
+        for attribute in class_attributes:
             if class_generated:
                 attribute['aggregate_class'] = class_name
             if 'disposition' in attribute:
@@ -83,7 +84,7 @@ class MakoClassGenerator(MakoStaticClassGenerator):
                     # Is the aggregate class generated?
                     if aggregate_class_is_generated:
                         print(str('\t ' * (deep + 1)) + ' ' + attribute['name'])
-                        callback(attribute, aggregate_attribute)
+                        callback(attribute, class_attributes, aggregate_attribute)
                     new_aggregate_attribute = attribute if aggregate_attribute is None and aggregate_class_is_generated \
                         else aggregate_attribute
                     self._recurse_foreach_attribute(attribute['type'], self._add_attribute,
@@ -93,21 +94,21 @@ class MakoClassGenerator(MakoStaticClassGenerator):
                     continue
                 elif self.helper.is_var_array_type(attribute) or self.helper.is_fill_array_type(attribute):
                     print(str('\t ' * (deep + 1)) + ' ' + attribute['name'])
-                    callback(attribute, aggregate_attribute)
+                    callback(attribute, class_attributes, aggregate_attribute)
                     continue
             else:
                 print(str('\t ' * (deep + 1)) + ' ' + attribute['name'])
-                callback(attribute, aggregate_attribute)
+                callback(attribute, class_attributes, aggregate_attribute)
 
-    def _add_attribute(self, attribute, aggregate_attribute):
+    def _add_attribute(self, attribute, class_attributes, aggregate_attribute):
         aggregate_attribute_name = aggregate_attribute['name'] if aggregate_attribute else None
         aggregate_attribute_type = aggregate_attribute['type'] if aggregate_attribute else None
-        kind = self.helper.get_attribute_kind(attribute)
+        kind = self.helper.get_attribute_kind(attribute, class_attributes)
         attribute_is_conditional = self.helper.is_conditional_attribute(attribute)
         attribute_comment = self.helper.get_comments_from_attribute(attribute)
         attribute_name = attribute['name']
         attribute_size = self.helper.get_attribute_size(self.schema, attribute)
-        attribute_var_type = self.helper.get_generated_type(self.schema, attribute)
+        attribute_var_type = self.helper.get_generated_type(self.schema, attribute, kind)
         attribute_is_final = attribute_name != 'size' and not attribute_is_conditional
         attribute_type = attribute.get('type', None)
         attribute_base_type = self.helper.get_base_type(self.schema, attribute_type)
