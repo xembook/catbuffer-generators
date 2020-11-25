@@ -17,10 +17,11 @@ public class EmbeddedTransactionBuilderHelper {
 % for name in generator.schema:
     <%
         layout = generator.schema[name].get("layout", [{type:""}])
-        entityTypeValue = next(iter([x for x in layout if x.get('type','') == 'EntityType']),{}).get('value',0)
+        entityTypeValue = next(iter([x for x in layout if x.get('name','') == 'entityType']),{}).get('value',0)
+        entityTypeVersion = next(iter([x for x in layout if x.get('name','') == 'version']),{}).get('value',0)
     %>\
     %if (entityTypeValue > 0 and 'Aggregate' not in name and 'Block' not in name):
-        if (headerBuilder.getType().getValue() == ${entityTypeValue}) {
+        if (headerBuilder.getType().getValue() == ${entityTypeValue} && headerBuilder.getVersion() == ${entityTypeVersion}) {
             ${name}BodyBuilder bodyBuilder = ${name}BodyBuilder.loadFromBinary(stream);
             SequenceInputStream concatenate = new SequenceInputStream(
             new ByteArrayInputStream(headerBuilder.serialize()),

@@ -2,7 +2,7 @@ import { EmbeddedTransactionBuilder } from './EmbeddedTransactionBuilder';
 % for name in generator.schema:
 <%
     layout = generator.schema[name].get("layout", [{type:""}])
-    entityTypeValue = next(iter([x for x in layout if x.get('type','') == 'EntityType']),{}).get('value',0)
+    entityTypeValue = next(iter([x for x in layout if x.get('name','') == 'entityType']),{}).get('value',0)
 %>\
 %if (entityTypeValue > 0 and 'Aggregate' not in name and 'Block' not in name):
 import { Embedded${name}Builder } from './Embedded${name}Builder';
@@ -19,11 +19,12 @@ export class EmbeddedTransactionHelper {
 % for name in generator.schema:
     <%
         layout = generator.schema[name].get("layout", [{type:""}])
-        entityTypeValue = next(iter([x for x in layout if x.get('type','') == 'EntityType']),{}).get('value',0)
+        entityTypeValue = next(iter([x for x in layout if x.get('name','') == 'entityType']),{}).get('value',0)
+        entityTypeVersion = next(iter([x for x in layout if x.get('name','') == 'version']),{}).get('value',0)
     %>\
     %if (entityTypeValue > 0 and 'Aggregate' not in name and 'Block' not in name):
 
-        if (header.type === ${entityTypeValue}) {
+        if (header.type === ${entityTypeValue} && header.version == ${entityTypeVersion}) {
             return Embedded${name}Builder.loadFromBinary(payload);
         }
     %endif
