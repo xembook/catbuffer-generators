@@ -2,7 +2,7 @@ import { TransactionBuilder } from "./TransactionBuilder";
 % for name in generator.schema:
 <%
     layout = generator.schema[name].get("layout", [{type:""}])
-    entityTypeValue = next(iter([x for x in layout if x.get('type','') == 'EntityType']),{}).get('value',0)
+    entityTypeValue = next(iter([x for x in layout if x.get('name','') == 'entityType']),{}).get('value',0)
 %>\
 %if (entityTypeValue > 0 and 'Block' not in name):
 import { ${name}Builder } from './${name}Builder';
@@ -19,10 +19,11 @@ export class TransactionHelper {
 % for name in generator.schema:
     <%
         layout = generator.schema[name].get("layout", [{type:""}])
-        entityTypeValue = next(iter([x for x in layout if x.get('type','') == 'EntityType']),{}).get('value',0)
+        entityTypeValue = next(iter([x for x in layout if x.get('name','') == 'entityType']),{}).get('value',0)
+        entityTypeVersion = next(iter([x for x in layout if x.get('name','') == 'version']),{}).get('value',0)
     %>\
     %if (entityTypeValue > 0 and 'Block' not in name):
-        if (header.type === ${entityTypeValue}) {
+        if (header.type === ${entityTypeValue} && header.version === ${entityTypeVersion}) {
             return  ${name}Builder.loadFromBinary(payload);
         }
     %endif

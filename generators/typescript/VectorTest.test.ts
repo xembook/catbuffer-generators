@@ -3,16 +3,12 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as builders from '../src';
 
-const {createHash} = require('crypto');
-
 interface BuilderTestItem {
     filename: string;
     builder: string;
     payload: string;
     comment: string;
 }
-
-const hash = s => createHash('sha256').update(s).digest('hex');
 
 const fromHexString = (hexString: string) =>
     new Uint8Array((hexString.match(/.{1,2}/g) || []).map(byte => parseInt(byte, 16)));
@@ -38,7 +34,7 @@ const items: BuilderTestItem[] = files.map(filename => {
 describe('serialize', function () {
     items.forEach(item => {
         const stringPayload = item.payload + '';
-        it(item.filename + " - " + item.builder + " - " + (item.comment || hash(stringPayload)), function () {
+        it(item.filename + " - " + item.builder + " - " + (item.comment || stringPayload), function () {
             const builderClass = (<any>builders)[item.builder]
             const serializer = builderClass.loadFromBinary(fromHexString(stringPayload));
             assert.equal(toHexString(serializer.serialize()), stringPayload.toUpperCase())

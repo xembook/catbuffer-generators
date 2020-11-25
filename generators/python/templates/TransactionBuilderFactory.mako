@@ -5,7 +5,7 @@ from .EmbeddedTransactionBuilder import EmbeddedTransactionBuilder
 % for name in sorted(generator.schema):
 <%
     layout = generator.schema[name].get("layout", [{type:""}])
-    entityTypeValue = next(iter([x for x in layout if x.get('type','') == 'EntityType']),{}).get('value',0)
+    entityTypeValue = next(iter([x for x in layout if x.get('name','') == 'entityType']),{}).get('value',0)
 %>\
 % if entityTypeValue > 0 and 'Aggregate' not in name and 'Block' not in name:
 from .Embedded${name}Builder import Embedded${name}Builder
@@ -16,7 +16,7 @@ from .TransactionBuilder import TransactionBuilder
 % for name in sorted(generator.schema):
 <%
     layout = generator.schema[name].get("layout", [{type:""}])
-    entityTypeValue = next(iter([x for x in layout if x.get('type','') == 'EntityType']),{}).get('value',0)
+    entityTypeValue = next(iter([x for x in layout if x.get('name','') == 'entityType']),{}).get('value',0)
 %>\
 % if entityTypeValue > 0 and 'Block' not in name:
 from .${name}Builder import ${name}Builder
@@ -45,13 +45,15 @@ class TransactionBuilderFactory:
         """
         headerBuilder = EmbeddedTransactionBuilder.loadFromBinary(payload)
         entityType = headerBuilder.getType().value
+        entityTypeVersion = headerBuilder.getVersion()
 % for name in generator.schema:
 <%
     layout = generator.schema[name].get("layout", [{type:""}])
-    entityTypeValue = next(iter([x for x in layout if x.get('type','') == 'EntityType']),{}).get('value',0)
+    entityTypeValue = next(iter([x for x in layout if x.get('name','') == 'entityType']),{}).get('value',0)
+    entityTypeVersion = next(iter([x for x in layout if x.get('name','') == 'version']),{}).get('value',0)
 %>\
 % if entityTypeValue > 0 and 'Aggregate' not in name and 'Block' not in name:
-        if entityType == ${entityTypeValue}:
+        if entityType == ${entityTypeValue} and entityTypeVersion == ${entityTypeVersion}:
             return Embedded${name}Builder.loadFromBinary(payload)
 % endif
 % endfor
@@ -68,13 +70,15 @@ class TransactionBuilderFactory:
         """
         headerBuilder = TransactionBuilder.loadFromBinary(payload)
         entityType = headerBuilder.getType().value
+        entityTypeVersion = headerBuilder.getVersion()
 % for name in generator.schema:
 <%
     layout = generator.schema[name].get("layout", [{type:""}])
-    entityTypeValue = next(iter([x for x in layout if x.get('type','') == 'EntityType']),{}).get('value',0)
+    entityTypeValue = next(iter([x for x in layout if x.get('name','') == 'entityType']),{}).get('value',0)
+    entityTypeVersion = next(iter([x for x in layout if x.get('name','') == 'version']),{}).get('value',0)
 %>\
     % if entityTypeValue > 0 and 'Block' not in name:
-        if entityType == ${entityTypeValue}:
+        if entityType == ${entityTypeValue} and entityTypeVersion == ${entityTypeVersion}:
             return ${name}Builder.loadFromBinary(payload)
     % endif
 % endfor
