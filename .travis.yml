@@ -51,9 +51,9 @@ jobs:
     - name: typescript publish alpha
       script: ./scripts/generate_typescript.sh publish
       if: branch = env(DEV_BRANCH) AND type = push
-    - name: python publish alpha
-      script: ./scripts/generate_python.sh publish
-      if: branch = env(DEV_BRANCH) AND type = push
+#    - name: python publish alpha
+#      script: ./scripts/generate_python.sh publish
+#      if: branch = env(DEV_BRANCH) AND type = push
 
     - stage: release
       name: java publish release
@@ -62,9 +62,9 @@ jobs:
     - name: typescript publish release
       script: ./scripts/generate_typescript.sh release
       if: branch = env(RELEASE_BRANCH) AND type = api AND commit_message = env(RELEASE_MESSAGE)
-    - name: python publish release
-      script: ./scripts/generate_python.sh release
-      if: branch = env(RELEASE_BRANCH) AND type = api AND commit_message = env(RELEASE_MESSAGE)
+#    - name: python publish release
+#      script: ./scripts/generate_python.sh release
+#      if: branch = env(RELEASE_BRANCH) AND type = api AND commit_message = env(RELEASE_MESSAGE)
 
     - stage: post release
       name: tag and version upgrade
