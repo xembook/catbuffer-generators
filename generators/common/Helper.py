@@ -90,7 +90,7 @@ class Helper(ABC):
 
     @staticmethod
     def is_reserved_field(attribute):
-        return 'name' in attribute and '_Reserved' in attribute['name']
+        return 'name' in attribute and '_Reserved' in attribute['name'] and 'size' in attribute
 
     @staticmethod
     def is_conditional_attribute(attribute):
