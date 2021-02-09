@@ -1,32 +1,31 @@
 # pylint: disable=R0911,R0912
 
-# Imports for creating transaction builders
-from .TransactionBuilder import TransactionBuilder
+# Imports for creating embedded transaction builders
+from .EmbeddedTransactionBuilder import EmbeddedTransactionBuilder
 % for name in sorted(generator.schema):
 <%
     layout = generator.schema[name].get("layout", [{type:""}])
     entityTypeValue = next(iter([x for x in layout if x.get('name','') == 'entityType']),{}).get('value',0)
 %>\
-% if entityTypeValue > 0 and 'Block' not in name:
-from .${name}Builder import ${name}Builder
+% if entityTypeValue > 0 and 'Aggregate' not in name and 'Block' not in name:
+from .Embedded${name}Builder import Embedded${name}Builder
 % endif
 % endfor
 
-
-class TransactionBuilderFactory:
-    """Factory in charge of creating the specific transaction builder from the binary payload.
+class EmbeddedTransactionBuilderFactory:
+    """Factory in charge of creating the specific embedded transaction builder from the binary payload.
     """
 
     @classmethod
-    def createBuilder(cls, payload) -> TransactionBuilder:
+    def createBuilder(cls, payload) -> EmbeddedTransactionBuilder:
         """
-        It creates the specific transaction builder from the payload bytes.
+        It creates the specific embedded transaction builder from the payload bytes.
         Args:
             payload: bytes
         Returns:
-            the TransactionBuilder subclass
+            the EmbeddedTransactionBuilder subclass
         """
-        headerBuilder = TransactionBuilder.loadFromBinary(payload)
+        headerBuilder = EmbeddedTransactionBuilder.loadFromBinary(payload)
         entityType = headerBuilder.getType().value
         entityTypeVersion = headerBuilder.getVersion()
 % for name in generator.schema:
@@ -35,9 +34,9 @@ class TransactionBuilderFactory:
     entityTypeValue = next(iter([x for x in layout if x.get('name','') == 'entityType']),{}).get('value',0)
     entityTypeVersion = next(iter([x for x in layout if x.get('name','') == 'version']),{}).get('value',0)
 %>\
-    % if entityTypeValue > 0 and 'Block' not in name:
+% if entityTypeValue > 0 and 'Aggregate' not in name and 'Block' not in name:
         if entityType == ${entityTypeValue} and entityTypeVersion == ${entityTypeVersion}:
-            return ${name}Builder.loadFromBinary(payload)
-    % endif
+            return Embedded${name}Builder.loadFromBinary(payload)
+% endif
 % endfor
         return headerBuilder

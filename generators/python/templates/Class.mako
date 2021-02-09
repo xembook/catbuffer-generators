@@ -92,7 +92,7 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
         ${a.attribute_name}ByteSize = ${a.attribute_size}  # kind:VAR_ARRAY
         ${a.attribute_name}: List[${a.attribute_class_name}] = []
         while ${a.attribute_name}ByteSize > 0:
-            item = TransactionBuilderFactory.createEmbeddedTransactionBuilder(bytes_)
+            item = EmbeddedTransactionBuilderFactory.createBuilder(bytes_)
             transactions.append(item)
             itemSize = item.getSize() + GeneratorUtils.getTransactionPaddingSize(item.getSize(), 8)
             ${a.attribute_name}ByteSize -= itemSize

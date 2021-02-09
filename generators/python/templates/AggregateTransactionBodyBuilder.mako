@@ -1,7 +1,7 @@
 from __future__ import annotations
 from functools import reduce
 from typing import List
-import TransactionBuilderFactory
+from .EmbeddedTransactionBuilderFactory import EmbeddedTransactionBuilderFactory
 from .CosignatureBuilder import CosignatureBuilder
 from .EmbeddedTransactionBuilder import EmbeddedTransactionBuilder
 from .GeneratorUtils import GeneratorUtils
@@ -68,7 +68,7 @@ class AggregateTransactionBodyBuilder:
         transactionsByteSize = payloadSize
         transactions: List[EmbeddedTransactionBuilder] = []
         while transactionsByteSize > 0:
-            builder = TransactionBuilderFactory.TransactionBuilderFactory.createEmbeddedTransactionBuilder(bytes_)
+            builder = EmbeddedTransactionBuilderFactory.createBuilder(bytes_)
             transactions.append(builder)
             builderSize = builder.getSize() + GeneratorUtils.getTransactionPaddingSize(builder.getSize(), 8)
             transactionsByteSize -= builderSize
