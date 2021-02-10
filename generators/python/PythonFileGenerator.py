@@ -35,7 +35,7 @@ class PythonFileGenerator(FileGenerator):
         return '../python/templates/'
 
     def get_static_templates_file_names(self):
-        return ['GeneratorUtils', 'AggregateTransactionBodyBuilder', 'EmbeddedTransactionBuilderFactory', 'TransactionBuilderFactory']
+        return ['GeneratorUtils', 'EmbeddedTransactionBuilderFactory', 'TransactionBuilderFactory']
 
     def get_main_file_extension(self):
         return '.py'

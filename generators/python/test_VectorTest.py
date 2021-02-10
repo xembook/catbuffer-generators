@@ -6,15 +6,15 @@ import pytest
 import yaml
 
 
-def read_test_vectors_file(filename):
-    with open(filename, 'rt') as inFd:
+def read_test_vectors_file(filepath):
+    with open(filepath, 'rt') as inFd:
         return yaml.load(inFd)
 
 
 def prepare_test_cases():
     cases = []
-    for f in Path('vector').iterdir():
-        cases += read_test_vectors_file(f)
+    for filepath in Path('vector').iterdir():
+        cases += read_test_vectors_file(filepath)
     return cases
 
 

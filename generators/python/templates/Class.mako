@@ -1,3 +1,4 @@
+## NOTE: do *not* touch `buffered` in render definitions, it will completely break output
 <%
     python_lib_import_statements = []
     catbuffer_lib_import_statements = []
@@ -15,7 +16,6 @@ from .GeneratorUtils import GeneratorUtils
 % for a in catbuffer_lib_import_statements:
 ${a}
 % endfor
-
 
 class ${generator.generated_class_name}${'(' + str(generator.generated_base_class_name) + ')' if generator.generated_base_class_name is not None else ''}:
     """${helper.capitalize_first_character(generator.comments)}.
@@ -51,6 +51,19 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
         self.${a.attribute_name} = ${a.attribute_name if not a.attribute_is_reserved else '0'}
         % endif
     % endfor
+
+% if 'AggregateTransactionBody' in generator.generated_class_name:
+    @staticmethod
+    def _loadEmbeddedTransactions(transactions: List[EmbeddedTransactionBuilder], payload: bytes, payloadSize: int):
+        remainingByteSizes = payloadSize
+        while remainingByteSizes > 0:
+            item = EmbeddedTransactionBuilderFactory.createBuilder(payload)
+            transactions.append(item)
+            itemSize = item.getSize() + GeneratorUtils.getTransactionPaddingSize(item.getSize(), 8)
+            remainingByteSizes -= itemSize
+            payload = payload[itemSize:]
+        return payload
+% endif
 ##  LOAD FROM BINARY:
 <%def name="renderReader(a)" filter="trim" buffered="True">
     % if a.kind == helper.AttributeKind.SIMPLE:
@@ -77,26 +90,14 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
         ${a.attribute_name} = ${a.attribute_class_name}.loadFromBinary(bytes_)  # kind:CUSTOM1
         bytes_ = bytes_[${a.attribute_name}.getSize():]
     % elif a.kind == helper.AttributeKind.FILL_ARRAY:
-        ${a.attribute_name}ByteSize = len(bytes_)  # kind:FILL_ARRAY
         ${a.attribute_name}: List[${a.attribute_class_name}] = []
-        while ${a.attribute_name}ByteSize > 0:
-            item = ${a.attribute_class_name}.loadFromBinary(bytes_)
-            ${a.attribute_name}.append(item)
-            itemSize = item.getSize()
-            ${a.attribute_name}ByteSize -= itemSize
-            bytes_ = bytes_[itemSize:]
+        bytes_ = GeneratorUtils.loadFromBinary(${a.attribute_class_name}, ${a.attribute_name}, bytes_, len(bytes_))
     % elif a.kind == helper.AttributeKind.FLAGS:
         ${a.attribute_name} = ${a.attribute_class_name}.bytesToFlags(bytes_, ${a.attribute_size})  # kind:FLAGS
         bytes_ = bytes_[${a.attribute_size}:]
     % elif a.kind == helper.AttributeKind.VAR_ARRAY:
-        ${a.attribute_name}ByteSize = ${a.attribute_size}  # kind:VAR_ARRAY
-        ${a.attribute_name}: List[${a.attribute_class_name}] = []
-        while ${a.attribute_name}ByteSize > 0:
-            item = EmbeddedTransactionBuilderFactory.createBuilder(bytes_)
-            transactions.append(item)
-            itemSize = item.getSize() + GeneratorUtils.getTransactionPaddingSize(item.getSize(), 8)
-            ${a.attribute_name}ByteSize -= itemSize
-            bytes_ = bytes_[itemSize:]
+        transactions: List[${a.attribute_class_name}] = []
+        bytes_ = ${generator.generated_class_name}._loadEmbeddedTransactions(transactions, bytes_, ${a.attribute_size})
     % else:
         FIX ME!
     % endif
@@ -151,7 +152,7 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
         return ${generator.generated_class_name}(${constructor_arguments_CSV})
 
 ## GETTERS:
-% for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_aggregate and not a.kind == helper.AttributeKind.SIZE_FIELD and (not a.attribute_is_reserved or not a.attribute_is_inline)]:
+% for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_reserved and not a.attribute_is_aggregate and not a.kind == helper.AttributeKind.SIZE_FIELD and (not a.attribute_is_reserved or not a.attribute_is_inline)]:
     def get${helper.capitalize_first_character(a.attribute_name) if a.attribute_name != 'size' else 'BytesSize'}(self) -> ${a.attribute_var_type}:
         """Gets ${a.attribute_comment}.
         Returns:
@@ -168,15 +169,39 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
     % endif
 
 % endfor
+% if 'AggregateTransactionBody' in generator.generated_class_name:
+    @classmethod
+    def _serialize_aligned(cls, transaction: EmbeddedTransactionBuilder) -> bytes:
+        """Serializes an embeded transaction with correct padding.
+        Returns:
+            Serialized embedded transaction.
+        """
+        bytes_ = transaction.serialize()
+        padding = bytes(GeneratorUtils.getTransactionPaddingSize(len(bytes_), 8))
+        return GeneratorUtils.concatTypedArrays(bytes_, padding)
+
+    @classmethod
+    def _getSize_aligned(cls, transaction: EmbeddedTransactionBuilder) -> int:
+        """Serializes an embeded transaction with correct padding.
+        Returns:
+            Serialized embedded transaction.
+        """
+        size = transaction.getSize()
+        paddingSize = GeneratorUtils.getTransactionPaddingSize(size, 8)
+        return size + paddingSize
+% endif
 ## SIZE:
-<%def name="renderSize(a)" filter="trim">\
+<%def name="renderSize(a)" filter="trim"  buffered="True">\
     % if a.kind == helper.AttributeKind.SIMPLE:
         size += ${a.attribute_size}  # ${a.attribute_name}
     % elif a.kind == helper.AttributeKind.SIZE_FIELD:
         size += ${a.attribute_size}  # ${a.attribute_name}
     % elif a.kind == helper.AttributeKind.BUFFER:
         size += len(self.${a.attribute_name})
-   % elif a.kind == helper.AttributeKind.ARRAY or a.kind == helper.AttributeKind.VAR_ARRAY or a.kind == helper.AttributeKind.FILL_ARRAY:
+    % elif a.kind == helper.AttributeKind.VAR_ARRAY:
+        for _ in self.${a.attribute_name}:
+            size += self._getSize_aligned(_)
+    % elif a.kind == helper.AttributeKind.ARRAY or a.kind == helper.AttributeKind.FILL_ARRAY:
         for _ in self.${a.attribute_name}:
             size += _.getSize()
     % elif a.kind == helper.AttributeKind.FLAGS:
@@ -194,7 +219,10 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
 % for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_inline]:
     % if a.attribute_is_conditional:
         if ${renderCondition(a) | trim}:
-            ${renderSize(a).strip()}
+            ## handle py indents
+            % for line in map(lambda a: a.strip(), renderSize(a).splitlines()):
+            ${line}
+            % endfor
     % else:
         ${renderSize(a).strip()}
     % endif
@@ -220,16 +248,32 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
 
 % endif
 ##  SERIALIZE:
-<%def name="renderSerialize(a)" filter="trim">\
+<%def name="renderSerialize(a)" filter="trim" buffered="True">\
     % if a.kind == helper.AttributeKind.SIMPLE and (generator.name != 'Receipt' or a.attribute_name != 'size'):
+        % if a.attribute_is_reserved:
+        bytes_ = GeneratorUtils.concatTypedArrays(bytes_, GeneratorUtils.uintToBuffer(0, ${a.attribute_size}))  # kind:SIMPLE
+        % else:
         bytes_ = GeneratorUtils.concatTypedArrays(bytes_, GeneratorUtils.uintToBuffer(self.get${helper.capitalize_first_character(a.attribute_name)}(), ${a.attribute_size}))  # kind:SIMPLE
+        % endif
     % elif a.kind == helper.AttributeKind.BUFFER:
         bytes_ = GeneratorUtils.concatTypedArrays(bytes_, self.${a.attribute_name})  # kind:BUFFER
     % elif a.kind == helper.AttributeKind.SIZE_FIELD:
+        ## note: it would be best to access parent 'kind'
+        % if 'AggregateTransactionBody' in generator.generated_class_name and a.attribute_name == 'payloadSize':
+        # calculate payload size
+        size_value = 0
+        for _ in self.${a.parent_attribute['name']}:
+            size_value += self._getSize_aligned(_)
+        bytes_ = GeneratorUtils.concatTypedArrays(bytes_, GeneratorUtils.uintToBuffer(size_value, ${a.attribute_size}))  # kind:SIZE_FIELD
+        % else:
         bytes_ = GeneratorUtils.concatTypedArrays(bytes_, GeneratorUtils.uintToBuffer(len(self.get${helper.capitalize_first_character(a.parent_attribute['name'])}()), ${a.attribute_size}))  # kind:SIZE_FIELD
-    % elif a.kind == helper.AttributeKind.ARRAY or a.kind == helper.AttributeKind.VAR_ARRAY or a.kind == helper.AttributeKind.FILL_ARRAY:
-        for _ in self.${a.attribute_name}:
-            bytes_ = GeneratorUtils.concatTypedArrays(bytes_, _.serialize())  # kind:ARRAY|VAR_ARRAY|FILL_ARRAY
+        % endif
+    % elif a.kind == helper.AttributeKind.ARRAY or a.kind == helper.AttributeKind.FILL_ARRAY:
+        for _ in self.${a.attribute_name}: # kind:ARRAY|FILL_ARRAY
+            bytes_ = GeneratorUtils.concatTypedArrays(bytes_, _.serialize())
+    % elif a.kind == helper.AttributeKind.VAR_ARRAY:
+        for _ in self.${a.attribute_name}: # kind:VAR_ARRAY
+            bytes_ = GeneratorUtils.concatTypedArrays(bytes_, self._serialize_aligned(_))
     % elif a.kind == helper.AttributeKind.CUSTOM:
         bytes_ = GeneratorUtils.concatTypedArrays(bytes_, self.${a.attribute_name}.serialize())  # kind:CUSTOM
     % elif a.kind == helper.AttributeKind.FLAGS:
@@ -250,7 +294,10 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
 % for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_inline]:
     % if a.attribute_is_conditional:
         if ${renderCondition(a) | trim}:
-            ${renderSerialize(a)}
+            ## handle py indents
+            % for line in map(lambda a: a.strip(), renderSerialize(a).splitlines()):
+            ${line}
+            % endfor
     % else:
         ${renderSerialize(a)}
     % endif
