@@ -86,6 +86,8 @@ cp "$rootDir/LICENSE" "${artifactBuildDir}"
 cp "$rootDir/.pylintrc" "${artifactBuildDir}"
 cp "$rootDir/generators/python/README.md" "${artifactBuildDir}"
 cp "$rootDir/generators/python/setup.py" "${artifactBuildDir}"
+cp "$rootDir/generators/python/"test_*.py "${artifactBuildDir}"
+cp -r "$rootDir/test/vector" "${artifactBuildDir}"
 cp "$rootDir/generators/python/.pypirc" "${HOME}"
 sed -i -e "s/#artifactName/$artifactName/g" "${artifactBuildDir}/setup.py"
 sed -i -e "s/#artifactVersion/$artifactVersion/g" "${artifactBuildDir}/setup.py"
@@ -93,12 +95,12 @@ sed -i -e "s/#artifactVersion/$artifactVersion/g" "${artifactBuildDir}/setup.py"
 mkdir -p "${artifactTestDir}"
 PYTEST_CACHE="$rootDir/test/python/.pytest_cache/"
 if [ -d "$PYTEST_CACHE" ]; then rm -Rf "$PYTEST_CACHE"; fi
-cp -r "$rootDir/test/python/" "${artifactTestDir}"
 
 # Build
 cd "${artifactBuildDir}"
 echo "Building..."
 PYTHONPATH=".:${PYTHONPATH}" python3 setup.py sdist bdist_wheel build
+
 # Test
 echo "Testing..."
 PYTHONPATH="./src:${PYTHONPATH}" pytest -v --color=yes --exitfirst --showlocals --durations=5

@@ -52,7 +52,7 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
         % endif
     % endfor
 ##  LOAD FROM BINARY:
-<%def name="renderReader(a)" filter="trim">
+<%def name="renderReader(a)" filter="trim" buffered="True">
     % if a.kind == helper.AttributeKind.SIMPLE:
         ${a.attribute_name} = GeneratorUtils.bufferToUint(GeneratorUtils.getBytes(bytes_, ${a.attribute_size}))  # kind:SIMPLE
         bytes_ = bytes_[${a.attribute_size}:]
@@ -68,14 +68,14 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
             item = ${a.attribute_class_name}.loadFromBinary(bytes_)
             ${a.attribute_name}.append(item)
             bytes_ = bytes_[item.getSize():]
-    % elif a.kind == helper.AttributeKind.CUSTOM and not (a.attribute_base_type == 'enum' or a.attribute_is_conditional or a.conditional_read_before):
-        ${a.attribute_name} = ${a.attribute_class_name}.loadFromBinary(bytes_)  # kind:CUSTOM1
-        bytes_ = bytes_[${a.attribute_name}.getSize():]
+    % elif a.kind == helper.AttributeKind.CUSTOM and a.conditional_read_before:
+        ${a.attribute_name} = ${a.attribute_class_name}.loadFromBinary(${a.attribute['condition']}Condition)  # kind:CUSTOM3
     % elif a.kind == helper.AttributeKind.CUSTOM and a.attribute_base_type == 'enum':
         ${a.attribute_name} = ${a.attribute_class_name}.loadFromBinary(bytes_)  # kind:CUSTOM2
         bytes_ = bytes_[${a.attribute_name}.getSize():]
     % elif a.kind == helper.AttributeKind.CUSTOM:
-        ${a.attribute_name} = ${a.attribute_class_name}.loadFromBinary(bytes_)  # kind:CUSTOM3
+        ${a.attribute_name} = ${a.attribute_class_name}.loadFromBinary(bytes_)  # kind:CUSTOM1
+        bytes_ = bytes_[${a.attribute_name}.getSize():]
     % elif a.kind == helper.AttributeKind.FILL_ARRAY:
         ${a.attribute_name}ByteSize = len(bytes_)  # kind:FILL_ARRAY
         ${a.attribute_name}: List[${a.attribute_class_name}] = []
@@ -125,13 +125,17 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
     % endif
     % for a in set([(a.attribute['condition'], a.attribute_size, a.conditional_read_before) for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_inline and a.conditional_read_before and a.attribute_is_conditional]):
         ${a[0]}Condition = bytes_[0:${a[1]}]
+        bytes_ = bytes_[${a[1]}:]
     % endfor
 
     % for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_inline and not a.conditional_read_before]:
         %if a.attribute_is_conditional:
         ${a.attribute_name} = None
         if ${renderCondition(a, useSelf=False) | trim}:
-            ${renderReader(a) | trim}
+            ## handle py indents
+            % for line in map(lambda a: a.strip(), renderReader(a).splitlines()):
+            ${line}
+            % endfor
         % else:
         ${renderReader(a) | trim}
         %endif
@@ -139,7 +143,10 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
     % for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_inline and a.conditional_read_before]:
         ${a.attribute_name} = None
         if ${renderCondition(a, useSelf=False) | trim}:
-            ${renderReader(a) | trim}
+            ## handle py indents
+            % for line in map(lambda a: a.strip(), renderReader(a).splitlines()):
+            ${line}
+            % endfor
     % endfor
         return ${generator.generated_class_name}(${constructor_arguments_CSV})
 
@@ -226,7 +233,7 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
     % elif a.kind == helper.AttributeKind.CUSTOM:
         bytes_ = GeneratorUtils.concatTypedArrays(bytes_, self.${a.attribute_name}.serialize())  # kind:CUSTOM
     % elif a.kind == helper.AttributeKind.FLAGS:
-        bytes_ = GeneratorUtils.concatTypedArrays(bytes_, ${a.attribute_class_name}.flagsToInt(self.get${helper.capitalize_first_character(a.attribute_name)}()))  # kind:FLAGS
+        bytes_ = GeneratorUtils.concatTypedArrays(bytes_, GeneratorUtils.uintToBuffer(${a.attribute_class_name}.flagsToInt(self.get${helper.capitalize_first_character(a.attribute_name)}()), ${a.attribute_size}))  # kind:FLAGS
     % else:
         # Ignored serialization: ${a.attribute_name} ${a.kind}
     % endif

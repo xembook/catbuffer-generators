@@ -2,7 +2,7 @@
   payload: '0100000000000000'
   comment: Add single quotes to avoid being used as a number with left zeros.
 - builder: TimestampDto
-  payload: 1234567891234567
+  payload: '1234567891234567'
 - builder: KeyDto
   payload: FA8EC085AE64CF30E44ADD18A3133D9B2190F9A20C08667A5EF44E5E9962E720
 - builder: Hash256Dto
