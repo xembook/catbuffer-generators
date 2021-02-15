@@ -21,7 +21,7 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
     """${helper.capitalize_first_character(generator.comments)}.
 
     Attributes:
-% for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_inline and not a.kind == helper.AttributeKind.SIZE_FIELD]:
+% for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_inline and not a.kind == helper.AttributeKind.SIZE_FIELD and not a.attribute_is_reserved and a.attribute_name != 'size']:
         ${a.attribute_name}: ${helper.capitalize_first_character(a.attribute_comment)}.
 % endfor
     """
@@ -31,24 +31,28 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
 ##  CONSTRUCTOR:
 <%
     constructor_params = generator.all_constructor_params
-    constructor_params_CSV = ', '.join([str(a.attribute_name) + ': ' + str(a.attribute_var_type) for a in constructor_params if a.attribute_condition_value is None and not a.attribute_is_aggregate and not a.attribute_is_reserved])
-    super_arguments_CSV = ', '.join([str(a.attribute_name) for a in constructor_params if a.attribute_is_super and not a.attribute_is_reserved and not a.attribute_is_aggregate])
+    constructor_params_CSV = ', '.join([str(a.attribute_name) + ': ' + str(a.attribute_var_type) for a in constructor_params if a.attribute_condition_value is None and not a.attribute_is_aggregate and not a.attribute_is_reserved and not a.attribute_name == 'size'])
+    super_arguments_CSV = ', '.join([str(a.attribute_name) for a in constructor_params if a.attribute_is_super and not a.attribute_is_reserved and not a.attribute_is_aggregate and not a.attribute_name == 'size'])
 %>
+## condition should be the same as condition in ctor
+% if 0 == len([a for a in constructor_params if not a.attribute_is_inline and not a.attribute_is_super and not a.attribute_is_reserved and not a.attribute_name == 'size']):
+    # pylint: disable=useless-super-delegation
+% endif
     def __init__(self, ${constructor_params_CSV}):
         """Constructor.
         Args:
-% for a in [a for a in constructor_params if a.attribute_condition_value is None and not a.attribute_is_aggregate and not a.attribute_is_reserved and not a.kind == helper.AttributeKind.SIZE_FIELD]:
+% for a in [a for a in constructor_params if a.attribute_condition_value is None and not a.attribute_is_aggregate and not a.attribute_is_reserved and not a.kind == helper.AttributeKind.SIZE_FIELD and not a.attribute_name == 'size']:
             ${a.attribute_name}: ${helper.capitalize_first_character(a.attribute_comment)}.
 % endfor
         """
     % if generator.base_class_name is not None:
         super().__init__(${super_arguments_CSV})
     % endif
-    % for a in [a for a in constructor_params if not a.attribute_is_inline and not a.attribute_is_super]:
+    % for a in [a for a in constructor_params if not a.attribute_is_inline and not a.attribute_is_super and not a.attribute_is_reserved and not a.attribute_name == 'size']:
         % if a.attribute_is_aggregate:
         self.${a.attribute_name} = ${a.attribute_var_type}(${', '.join([str(inline.attribute_name) for inline in constructor_params if inline.attribute_aggregate_attribute_name == a.attribute_name and not inline.attribute_is_reserved and not inline.kind == helper.AttributeKind.SIZE_FIELD and inline.attribute_condition_value is None and not inline.attribute_is_aggregate])})
         % else:
-        self.${a.attribute_name} = ${a.attribute_name if not a.attribute_is_reserved else '0'}
+        self.${a.attribute_name} = ${a.attribute_name}
         % endif
     % endfor
 
@@ -106,10 +110,10 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
     possible_constructor_params = generator.constructor_attributes[0]
     if generator.base_class_name is None:
         constructor_arguments_CSV = ', '.join([str(a.attribute_name)
-        for a in possible_constructor_params if not a.attribute_is_aggregate and not a.attribute_is_reserved])
+        for a in possible_constructor_params if not a.attribute_is_aggregate and not a.attribute_is_reserved and not a.attribute_name == 'size'])
     else:
         constructor_arguments_CSV = ', '.join(['{0}{1}'.format('superObject.' if a.attribute_is_super else ('' if a.attribute_aggregate_attribute_name is None else a.attribute_aggregate_attribute_name + '.'), a.attribute_name)
-        for a in possible_constructor_params if not a.attribute_is_aggregate and not a.attribute_is_reserved])
+        for a in possible_constructor_params if not a.attribute_is_aggregate and not a.attribute_is_reserved and not a.attribute_name == 'size'])
 %>
     @classmethod
     def loadFromBinary(cls, payload: bytes) -> ${generator.generated_class_name}:
@@ -152,7 +156,7 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
         return ${generator.generated_class_name}(${constructor_arguments_CSV})
 
 ## GETTERS:
-% for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_reserved and not a.attribute_is_aggregate and not a.kind == helper.AttributeKind.SIZE_FIELD and (not a.attribute_is_reserved or not a.attribute_is_inline)]:
+% for a in [a for a in generator.attributes if not a.attribute_is_super and not a.attribute_is_reserved and not a.attribute_is_aggregate and not a.kind == helper.AttributeKind.SIZE_FIELD and (not a.attribute_is_reserved or not a.attribute_is_inline) and not a.attribute_name == 'size']:
     def get${helper.capitalize_first_character(a.attribute_name) if a.attribute_name != 'size' else 'BytesSize'}(self) -> ${a.attribute_var_type}:
         """Gets ${a.attribute_comment}.
         Returns:
@@ -249,7 +253,9 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
 % endif
 ##  SERIALIZE:
 <%def name="renderSerialize(a)" filter="trim" buffered="True">\
-    % if a.kind == helper.AttributeKind.SIMPLE and (generator.name != 'Receipt' or a.attribute_name != 'size'):
+    % if a.kind == helper.AttributeKind.SIMPLE and a.attribute_is_reserved:
+        bytes_ = GeneratorUtils.concatTypedArrays(bytes_, GeneratorUtils.uintToBuffer(0, ${a.attribute_size}))
+    % elif a.kind == helper.AttributeKind.SIMPLE and (generator.name != 'Receipt' or a.attribute_name != 'size'):
         % if a.attribute_is_reserved:
         bytes_ = GeneratorUtils.concatTypedArrays(bytes_, GeneratorUtils.uintToBuffer(0, ${a.attribute_size}))  # kind:SIMPLE
         % else:
