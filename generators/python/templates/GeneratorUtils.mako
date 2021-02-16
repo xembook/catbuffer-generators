@@ -1,3 +1,7 @@
+from __future__ import annotations
+from typing import List, TypeVar
+
+T = TypeVar('T')
 
 class GeneratorUtils:
     """Generator utility class"""
@@ -31,3 +35,16 @@ class GeneratorUtils:
         if size > len(binary):
             raise Exception('size should not exceed {0}. The value of size was: {1}'.format(len(binary), size))
         return binary[0:size]
+
+    # pylint: disable=bad-staticmethod-argument
+    # cls argument is not GeneratorUtils
+    @staticmethod
+    def loadFromBinary(cls: T, items: List[cls], payload: bytes, payloadSize: int):
+        remainingByteSizes = payloadSize
+        while remainingByteSizes > 0:
+            item = cls.loadFromBinary(payload)
+            items.append(item)
+            itemSize = item.getSize()
+            remainingByteSizes -= itemSize
+            payload = payload[itemSize:]
+        return payload

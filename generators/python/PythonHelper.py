@@ -16,6 +16,8 @@ class PythonHelper(Helper):
                         required_import.add('from .' + typename + ' import ' + typename)
                 elif typename != class_name and str(typename)[0].isupper():
                     required_import.add('from .' + typename + ' import ' + typename)
+        if class_name == 'AggregateTransactionBodyBuilder':
+            required_import.add('from. EmbeddedTransactionBuilderFactory import EmbeddedTransactionBuilderFactory')
         return required_import
 
     @staticmethod
