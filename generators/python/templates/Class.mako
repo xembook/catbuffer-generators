@@ -30,9 +30,15 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
 </%def>\
 ##  CONSTRUCTOR:
 <%
+    def filter_param(a):
+        return a.attribute_condition_value is None and not a.attribute_is_aggregate and not a.attribute_is_reserved and not a.attribute_name == 'size'
+
+    def arg_to_signature(a):
+        return '{}: {}'.format(a.attribute_name, a.attribute_var_type)
+
     constructor_params = generator.all_constructor_params
-    constructor_params_CSV = ', '.join([str(a.attribute_name) + ': ' + str(a.attribute_var_type) for a in constructor_params if a.attribute_condition_value is None and not a.attribute_is_aggregate and not a.attribute_is_reserved and not a.attribute_name == 'size'])
-    super_arguments_CSV = ', '.join([str(a.attribute_name) for a in constructor_params if a.attribute_is_super and not a.attribute_is_reserved and not a.attribute_is_aggregate and not a.attribute_name == 'size'])
+    constructor_params_CSV = ', '.join(map(arg_to_signature, filter(filter_param, constructor_params)))
+    super_arguments_CSV = ', '.join([str(a.attribute_name) for a in filter(filter_param, constructor_params) if a.attribute_is_super])
 %>
 ## condition should be the same as condition in ctor
 % if 0 == len([a for a in constructor_params if not a.attribute_is_inline and not a.attribute_is_super and not a.attribute_is_reserved and not a.attribute_name == 'size']):
@@ -56,18 +62,16 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
         % endif
     % endfor
 
-% if 'AggregateTransactionBody' in generator.generated_class_name:
+%if not generator.name.endswith('BlockHeader'):
+  % if len([a for a in constructor_params if not a.attribute_is_inline and not a.attribute_is_super and not a.attribute_is_reserved and not a.attribute_name == 'size']) > 1:
     @staticmethod
-    def _loadEmbeddedTransactions(transactions: List[EmbeddedTransactionBuilder], payload: bytes, payloadSize: int):
-        remainingByteSizes = payloadSize
-        while remainingByteSizes > 0:
-            item = EmbeddedTransactionBuilderFactory.createBuilder(payload)
-            transactions.append(item)
-            itemSize = item.getSize() + GeneratorUtils.getTransactionPaddingSize(item.getSize(), 8)
-            remainingByteSizes -= itemSize
-            payload = payload[itemSize:]
-        return payload
-% endif
+    def from_tuple(params):
+        return ${generator.generated_class_name}(*params)
+
+    def as_tuple(self):
+        return (${', '.join(['self.' + a.attribute_name for a in constructor_params if not a.attribute_is_inline and not a.attribute_is_super and not a.attribute_is_reserved and not a.attribute_name == 'size'])})
+  % endif
+%endif
 ##  LOAD FROM BINARY:
 <%def name="renderReader(a)" filter="trim" buffered="True">
     % if a.kind == helper.AttributeKind.SIMPLE:
@@ -173,27 +177,6 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
     % endif
 
 % endfor
-% if 'AggregateTransactionBody' in generator.generated_class_name:
-    @classmethod
-    def _serialize_aligned(cls, transaction: EmbeddedTransactionBuilder) -> bytes:
-        """Serializes an embeded transaction with correct padding.
-        Returns:
-            Serialized embedded transaction.
-        """
-        bytes_ = transaction.serialize()
-        padding = bytes(GeneratorUtils.getTransactionPaddingSize(len(bytes_), 8))
-        return GeneratorUtils.concatTypedArrays(bytes_, padding)
-
-    @classmethod
-    def _getSize_aligned(cls, transaction: EmbeddedTransactionBuilder) -> int:
-        """Serializes an embeded transaction with correct padding.
-        Returns:
-            Serialized embedded transaction.
-        """
-        size = transaction.getSize()
-        paddingSize = GeneratorUtils.getTransactionPaddingSize(size, 8)
-        return size + paddingSize
-% endif
 ## SIZE:
 <%def name="renderSize(a)" filter="trim"  buffered="True">\
     % if a.kind == helper.AttributeKind.SIMPLE:
@@ -233,24 +216,6 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
 % endfor
         return size
 
-% if generator.base_class_name in ['Transaction', 'EmbeddedTransaction']:
-    def getBody(self) -> ${generator.body_class_name}Builder:
-        """Gets the body builder of the object.
-        Returns:
-            Body builder.
-        """
-        return self.${helper.decapitalize_first_character(generator.body_class_name)}
-
-% endif
-% if generator.name in ['Transaction', 'EmbeddedTransaction']:
-    def getBody(self) -> None:
-        """Gets the body builder of the object.
-        Returns:
-            Body builder.
-        """
-        return None
-
-% endif
 ##  SERIALIZE:
 <%def name="renderSerialize(a)" filter="trim" buffered="True">\
     % if a.kind == helper.AttributeKind.SIMPLE and a.attribute_is_reserved:
@@ -264,16 +229,7 @@ class ${generator.generated_class_name}${'(' + str(generator.generated_base_clas
     % elif a.kind == helper.AttributeKind.BUFFER:
         bytes_ = GeneratorUtils.concatTypedArrays(bytes_, self.${a.attribute_name})  # kind:BUFFER
     % elif a.kind == helper.AttributeKind.SIZE_FIELD:
-        ## note: it would be best to access parent 'kind'
-        % if 'AggregateTransactionBody' in generator.generated_class_name and a.attribute_name == 'payloadSize':
-        # calculate payload size
-        size_value = 0
-        for _ in self.${a.parent_attribute['name']}:
-            size_value += self._getSize_aligned(_)
-        bytes_ = GeneratorUtils.concatTypedArrays(bytes_, GeneratorUtils.uintToBuffer(size_value, ${a.attribute_size}))  # kind:SIZE_FIELD
-        % else:
         bytes_ = GeneratorUtils.concatTypedArrays(bytes_, GeneratorUtils.uintToBuffer(len(self.get${helper.capitalize_first_character(a.parent_attribute['name'])}()), ${a.attribute_size}))  # kind:SIZE_FIELD
-        % endif
     % elif a.kind == helper.AttributeKind.ARRAY or a.kind == helper.AttributeKind.FILL_ARRAY:
         for _ in self.${a.attribute_name}: # kind:ARRAY|FILL_ARRAY
             bytes_ = GeneratorUtils.concatTypedArrays(bytes_, _.serialize())

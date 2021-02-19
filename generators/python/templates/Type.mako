@@ -8,13 +8,19 @@ class ${generator.generated_class_name}:
     Attributes:
         ${generator.attribute_name}: ${generator.comments}.
     """
-
-    def __init__(self, ${generator.attribute_name}: ${generator.attribute_type}):
+% if generator.attribute_kind == helper.AttributeKind.BUFFER:
+    def __init__(self, ${generator.attribute_name}: ${generator.attribute_type} = bytes(${generator.size})):
+% else:
+    def __init__(self, ${generator.attribute_name}: ${generator.attribute_type} = 0):
+% endif
         """Constructor.
 
         Args:
             ${generator.attribute_name}: ${generator.comments}.
         """
+% if generator.attribute_kind == helper.AttributeKind.BUFFER:
+        assert len(${generator.attribute_name}) == ${generator.size}, 'required argument bytes({})'.format(${generator.size})
+% endif
         self.${generator.attribute_name} = ${generator.attribute_name}
 
     @classmethod

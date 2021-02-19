@@ -26,8 +26,8 @@ class EmbeddedTransactionBuilderFactory:
             the EmbeddedTransactionBuilder subclass
         """
         headerBuilder = EmbeddedTransactionBuilder.loadFromBinary(payload)
-        entityType = headerBuilder.getType().value
-        entityTypeVersion = headerBuilder.getVersion()
+        entityType = headerBuilder.type
+        entityTypeVersion = headerBuilder.version
 % for name in generator.schema:
 <%
     layout = generator.schema[name].get("layout", [{type:""}])

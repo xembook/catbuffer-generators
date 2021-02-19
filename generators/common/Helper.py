@@ -43,6 +43,10 @@ class Helper(ABC):
         self.AttributeKind = AttributeKind
 
     @staticmethod
+    def get_class_template_path(template_path, _):
+        return template_path + 'Class.mako'
+
+    @staticmethod
     def is_struct_type(typename):
         return typename == TypeDescriptorType.Struct.value
 

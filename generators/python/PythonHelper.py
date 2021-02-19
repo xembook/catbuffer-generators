@@ -21,6 +21,13 @@ class PythonHelper(Helper):
         return required_import
 
     @staticmethod
+    def get_class_template_path(template_path, name):
+        if name.endswith('Transaction') or name.endswith('TransactionBody'):
+            return template_path + 'TransactionClass.mako'
+
+        return template_path + 'Class.mako'
+
+    @staticmethod
     def get_all_constructor_params(attributes):
         return [a for a in attributes if not a.kind == AttributeKind.SIZE_FIELD]
 
