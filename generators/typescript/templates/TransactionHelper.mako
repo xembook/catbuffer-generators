@@ -4,7 +4,7 @@ import { TransactionBuilder } from "./TransactionBuilder";
     layout = generator.schema[name].get("layout", [{type:""}])
     entityTypeValue = next(iter([x for x in layout if x.get('name','') == 'entityType']),{}).get('value',0)
 %>\
-%if (entityTypeValue > 0 and 'Block' not in name):
+%if (entityTypeValue > 0 and 'Block' not in name and not name.startswith('Embedded')):
 import { ${name}Builder } from './${name}Builder';
 %endif
 % endfor
@@ -22,7 +22,7 @@ export class TransactionHelper {
         entityTypeValue = next(iter([x for x in layout if x.get('name','') == 'entityType']),{}).get('value',0)
         entityTypeVersion = next(iter([x for x in layout if x.get('name','') == 'version']),{}).get('value',0)
     %>\
-    %if (entityTypeValue > 0 and 'Block' not in name):
+    %if (entityTypeValue > 0 and 'Block' not in name and not name.startswith('Embedded')):
         if (header.type === ${entityTypeValue} && header.version === ${entityTypeVersion}) {
             return  ${name}Builder.loadFromBinary(payload);
         }
