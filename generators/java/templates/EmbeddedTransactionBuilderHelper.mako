@@ -20,13 +20,13 @@ public class EmbeddedTransactionBuilderHelper {
         entityTypeValue = next(iter([x for x in layout if x.get('name','') == 'entityType']),{}).get('value',0)
         entityTypeVersion = next(iter([x for x in layout if x.get('name','') == 'version']),{}).get('value',0)
     %>\
-    %if (entityTypeValue > 0 and 'Aggregate' not in name and 'Block' not in name):
+    %if (entityTypeValue > 0 and 'Aggregate' not in name and 'Block' not in name and name.startswith('Embedded')):
         if (headerBuilder.getType().getValue() == ${entityTypeValue} && headerBuilder.getVersion() == ${entityTypeVersion}) {
-            ${name}BodyBuilder bodyBuilder = ${name}BodyBuilder.loadFromBinary(stream);
+            ${name[8:]}BodyBuilder bodyBuilder = ${name[8:]}BodyBuilder.loadFromBinary(stream);
             SequenceInputStream concatenate = new SequenceInputStream(
             new ByteArrayInputStream(headerBuilder.serialize()),
             new ByteArrayInputStream(bodyBuilder.serialize()));
-            return Embedded${name}Builder.loadFromBinary(new DataInputStream(concatenate));
+            return ${name}Builder.loadFromBinary(new DataInputStream(concatenate));
         }
     %endif
 % endfor
