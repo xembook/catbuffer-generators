@@ -1,6 +1,9 @@
 from __future__ import annotations
+from binascii import hexlify
+% if generator.name == 'UnresolvedAddress':
+from base64 import b32encode
+% endif
 from .GeneratorUtils import GeneratorUtils
-
 
 class ${generator.generated_class_name}:
     """${generator.comments}.
@@ -24,7 +27,7 @@ class ${generator.generated_class_name}:
         self.${generator.attribute_name} = ${generator.attribute_name}
 
     @classmethod
-    def loadFromBinary(cls, payload: bytes) -> ${generator.generated_class_name}:
+    def load_from_binary(cls, payload: bytes) -> ${generator.generated_class_name}:
         """Creates an instance of ${generator.generated_class_name} from binary payload.
 
         Args:
@@ -34,21 +37,21 @@ class ${generator.generated_class_name}:
         """
         bytes_ = bytes(payload)
 % if generator.attribute_kind == helper.AttributeKind.BUFFER:
-        ${generator.attribute_name} = GeneratorUtils.getBytes(bytes_, ${generator.size})
+        ${generator.attribute_name} = GeneratorUtils.get_bytes(bytes_, ${generator.size})
 % else:
-        ${generator.attribute_name} = GeneratorUtils.bufferToUint(GeneratorUtils.getBytes(bytes_, ${generator.size}))
+        ${generator.attribute_name} = GeneratorUtils.buffer_to_uint(GeneratorUtils.get_bytes(bytes_, ${generator.size}))
 % endif
         return ${generator.generated_class_name}(${generator.attribute_name})
 
     @classmethod
-    def getSize(cls) -> int:
+    def get_size(cls) -> int:
         """Gets the size of the object.
         Returns:
             Size in bytes.
         """
         return ${generator.size}
 
-    def get${generator.name}(self) -> ${generator.attribute_type}:
+    def get_${helper.camel_to_snake(generator.name)}(self) -> ${generator.attribute_type}:
         """Gets ${generator.comments}.
 
         Returns:
@@ -64,8 +67,20 @@ class ${generator.generated_class_name}:
         """
         bytes_ = bytes()
 % if generator.attribute_kind == helper.AttributeKind.BUFFER:
-        bytes_ = GeneratorUtils.concatTypedArrays(bytes_, self.${generator.attribute_name})
+        bytes_ = GeneratorUtils.concat_typed_arrays(bytes_, self.${generator.attribute_name})
 % else:
-        bytes_ = GeneratorUtils.concatTypedArrays(bytes_, GeneratorUtils.uintToBuffer(self.get${generator.name}(), ${generator.size}))
+        bytes_ = GeneratorUtils.concat_typed_arrays(bytes_, GeneratorUtils.uint_to_buffer(self.get_${helper.camel_to_snake(generator.name)}(), ${generator.size}))
 % endif
         return bytes_
+
+    def __str__(self):
+% if generator.attribute_kind == helper.AttributeKind.BUFFER:
+    % if generator.name == 'UnresolvedAddress':
+        result = '{} ({})'.format(hexlify(self.${generator.attribute_name}).decode('utf-8'), b32encode(self.${generator.attribute_name}).decode('utf-8')[:-1])
+    % else:
+        result = hexlify(self.${generator.attribute_name}).decode('utf-8') # ${generator.name}
+    % endif
+% else:
+        result = hexlify(GeneratorUtils.uint_to_buffer(self.get_${helper.camel_to_snake(generator.name)}(), ${generator.size})).decode('utf-8')
+% endif
+        return result

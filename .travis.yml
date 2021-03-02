@@ -62,7 +62,7 @@ jobs:
       if: branch = env(DEV_BRANCH) AND type = push
     - name: python publish alpha
       script: ./scripts/generate_python.sh publish
-      if: branch = env(DEV_BRANCH) AND type = push
+      if: (branch = env(DEV_BRANCH) OR branch = dev-py) AND type = push
 
     - stage: release
       name: java publish release

@@ -16,9 +16,21 @@ class PythonHelper(Helper):
                         required_import.add('from .' + typename + ' import ' + typename)
                 elif typename != class_name and str(typename)[0].isupper():
                     required_import.add('from .' + typename + ' import ' + typename)
+        if class_name.endswith('TransactionBuilder') or class_name.endswith('TransactionBodyBuilder') or class_name == 'CosignatureBuilder':
+            required_import.add('from binascii import hexlify')
+
+        if class_name.endswith('TransactionBuilder') or class_name.endswith('TransactionBodyBuilder'):
+            required_import.add('import re')
+
         if class_name == 'AggregateTransactionBodyBuilder':
-            required_import.add('from. EmbeddedTransactionBuilderFactory import EmbeddedTransactionBuilderFactory')
+            required_import.add('from .EmbeddedTransactionBuilderFactory import EmbeddedTransactionBuilderFactory')
+
         return required_import
+
+    @staticmethod
+    def camel_to_snake(name):
+        name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+        return re.sub('([a-z0-9])([A-Z])', r'\1_\2', name).lower()
 
     @staticmethod
     def get_class_template_path(template_path, name):
