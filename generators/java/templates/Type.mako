@@ -13,7 +13,6 @@ public final class ${generator.generated_class_name} implements Serializer {
      */
     public ${generator.generated_class_name}(final ${generator.attribute_type} ${generator.attribute_name}) {
         this.${generator.attribute_name} = ${generator.attribute_name};
-        GeneratorUtils.writeBuilderToFile(this, System.getProperty("user.home") + "/catbuffers.yml");
     }
 
     /**
@@ -31,7 +30,6 @@ public final class ${generator.generated_class_name} implements Serializer {
         } catch(Exception e) {
             throw GeneratorUtils.getExceptionToPropagate(e);
         }
-        GeneratorUtils.writeBuilderToFile(this, System.getProperty("user.home") + "/catbuffers.yml");
     }
 
     /**
