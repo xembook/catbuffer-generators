@@ -6,7 +6,9 @@ The generated code is in Python version 3.7.
 
 This library helps serialize and deserialize NEM's Catapult entities in Python applications. 
 
-The library's main client may be a community-driven NEM Python SDK (nem2-sdk-python) but it can also be used alone.
+The library's main client is (symbol-sdk-core-python). We suggest not using this library directly.
+
+Right now only transactions and related objects are generated in sensible manner, support ffor state-related objects will be added in future.
 
 ## Installation & Usage
 ### pip install
@@ -29,9 +31,5 @@ pip install catbuffer=={version}
 Example:
 
 ```sh
-pip3 install catbuffer==0.0.2.20200329.111953a1
+pip3 install catbuffer==1.0.0.20210413.152059a1
 ```
-
-## Python generator developer notes
-
-As catbuffer schema uses upper and lower Camel Case naming convention, the generated code also uses this convention for easier cross-referencing between the code and the schemas. You may want to disable PEP 8 naming convention violation inspection in your IDE.
