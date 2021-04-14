@@ -25,18 +25,18 @@ class ${generator.generated_class_name}(${base_class_name}):
 % endfor
 
     @classmethod
-    def loadFromBinary(cls, payload: bytes) -> ${generator.generated_class_name}:
+    def load_from_binary(cls, payload: bytes) -> ${generator.generated_class_name}:
         """Creates an instance of ${generator.generated_class_name} from binary payload.
         Args:
             payload: Byte payload to use to serialize the object.
         Returns:
             Instance of ${generator.generated_class_name}.
         """
-        value: int = GeneratorUtils.bufferToUint(GeneratorUtils.getBytes(bytes(payload), ${generator.size}))
+        value: int = GeneratorUtils.buffer_to_uint(GeneratorUtils.get_bytes(bytes(payload), ${generator.size}))
         return ${generator.generated_class_name}(value)
 
     @classmethod
-    def getSize(cls) -> int:
+    def get_size(cls) -> int:
         """Gets the size of the object.
         Returns:
             Size in bytes.
@@ -52,7 +52,7 @@ class ${generator.generated_class_name}(${base_class_name}):
         Returns:
             List of ${generator.generated_class_name} flags representing the int value.
         """
-        return cls.intToFlags(GeneratorUtils.bufferToUint(GeneratorUtils.getBytes(bitMaskValue, size)))
+        return cls.intToFlags(GeneratorUtils.buffer_to_uint(GeneratorUtils.get_bytes(bitMaskValue, size)))
 
     @classmethod
     def intToFlags(cls, bitMaskValue: int) -> List[${generator.generated_class_name}]:
@@ -89,5 +89,5 @@ class ${generator.generated_class_name}(${base_class_name}):
             Serialized bytes.
         """
         bytes_ = bytes()
-        bytes_ = GeneratorUtils.concatTypedArrays(bytes_, GeneratorUtils.uintToBuffer(self.value, ${generator.size}))
+        bytes_ = GeneratorUtils.concat_typed_arrays(bytes_, GeneratorUtils.uint_to_buffer(self.value, ${generator.size}))
         return bytes_

@@ -14,6 +14,10 @@ AttributeData = namedtuple('AttributeData',
                             'attribute_condition_value', 'attribute_condition_provide',
                             'conditional_read_before'])
 
+ImmutableAttributeData = namedtuple('ImmutableAttributeData',
+                                    ['attribute', 'kind', 'attribute_name', 'attribute_value', 'attribute_size', 'attribute_var_type',
+                                     'attribute_type', 'attribute_base_type'])
+
 
 class MakoClassGenerator(MakoStaticClassGenerator):
     """
@@ -21,7 +25,7 @@ class MakoClassGenerator(MakoStaticClassGenerator):
     """
 
     def __init__(self, helper, name, schema, class_schema, template_path, file_extension):
-        super().__init__(template_path + 'Class.mako',
+        super().__init__(helper.get_class_template_path(template_path, name),
                          helper.get_generated_class_name(name, class_schema, schema) + file_extension,
                          helper,
                          schema,
@@ -30,13 +34,14 @@ class MakoClassGenerator(MakoStaticClassGenerator):
         self.required_import = set()
         self.name = name
         self.attributes = []
+        self.immutable_attributes = []
         self.generated_class_name = helper.get_generated_class_name(name, class_schema, schema)
         self.base_class_name = None
         self.generated_base_class_name = None
         if self.helper.should_use_super_class():
             self.foreach_attributes(self.class_schema['layout'], self._find_base_callback)
         self.comments = helper.get_comments_from_attribute(self.class_schema)
-        self._recurse_foreach_attribute(self.name, self._add_attribute)
+        self._recurse_foreach_attribute(self.name)
         self.body_class_name = helper.get_body_class_name(self.name)
 
         condition_types = [(a, schema[a.condition_type_attribute['type']]) for a in self.attributes if
@@ -70,8 +75,8 @@ class MakoClassGenerator(MakoStaticClassGenerator):
                                   condition_types_values}
         return condition_types_values
 
-    def _recurse_foreach_attribute(self, class_name: str, callback, aggregate_attribute=None, deep=0):
-        print(str('\t' * deep) + '- ' + class_name)
+    def _recurse_foreach_attribute(self, class_name: str, aggregate_attribute=None, depth=0):
+        print(str('\t' * depth) + '- ' + class_name)
         class_generated = (class_name != self.name and self.helper.should_generate_class(class_name))
         class_attributes = self.schema[class_name]['layout']
         for attribute in class_attributes:
@@ -83,22 +88,34 @@ class MakoClassGenerator(MakoStaticClassGenerator):
                     aggregate_class_is_generated = self.helper.should_generate_class(attribute['type'])
                     # Is the aggregate class generated?
                     if aggregate_class_is_generated:
-                        print(str('\t ' * (deep + 1)) + ' ' + attribute['name'])
-                        callback(attribute, class_attributes, aggregate_attribute)
+                        print(str('\t ' * (depth + 1)) + ' ' + attribute['name'])
+                        self._add_attribute(attribute, class_attributes, aggregate_attribute)
                     new_aggregate_attribute = attribute if aggregate_attribute is None and aggregate_class_is_generated \
                         else aggregate_attribute
-                    self._recurse_foreach_attribute(attribute['type'], self._add_attribute,
-                                                    new_aggregate_attribute,
-                                                    deep + 1)
+                    self._recurse_foreach_attribute(attribute['type'], new_aggregate_attribute, depth + 1)
                 elif attribute['disposition'] == TypeDescriptorDisposition.Const.value:
+                    self._add_immutable_attribute(attribute, class_attributes)
                     continue
                 elif self.helper.is_var_array_type(attribute) or self.helper.is_fill_array_type(attribute):
-                    print(str('\t ' * (deep + 1)) + ' ' + attribute['name'])
-                    callback(attribute, class_attributes, aggregate_attribute)
+                    print(str('\t ' * (depth + 1)) + ' ' + attribute['name'])
+                    self._add_attribute(attribute, class_attributes, aggregate_attribute)
                     continue
             else:
-                print(str('\t ' * (deep + 1)) + ' ' + attribute['name'])
-                callback(attribute, class_attributes, aggregate_attribute)
+                print(str('\t ' * (depth + 1)) + ' ' + attribute['name'])
+                self._add_attribute(attribute, class_attributes, aggregate_attribute)
+
+    def _add_immutable_attribute(self, attribute, class_attributes):
+        kind = self.helper.get_attribute_kind(attribute, class_attributes)
+        attribute_name = attribute['name']
+        attribute_value = attribute['value']
+        attribute_size = self.helper.get_attribute_size(self.schema, attribute)
+        attribute_var_type = self.helper.get_generated_type(self.schema, attribute, kind)
+        attribute_type = attribute.get('type', None)
+        attribute_base_type = self.helper.get_base_type(self.schema, attribute_type)
+
+        print(attribute)
+        self.immutable_attributes.append(ImmutableAttributeData(
+            attribute, kind, attribute_name, attribute_value, attribute_size, attribute_var_type, attribute_type, attribute_base_type))
 
     def _add_attribute(self, attribute, class_attributes, aggregate_attribute):
         aggregate_attribute_name = aggregate_attribute['name'] if aggregate_attribute else None

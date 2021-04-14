@@ -45,6 +45,6 @@ def test_serialize(item):
 
     builderModule = importlib.import_module('symbol_catbuffer.{}'.format(builderName))
     builderClass = getattr(builderModule, builderName)
-    builder = builderClass.loadFromBinary(prepare_payload(item['payload']))
+    builder = builderClass.load_from_binary(prepare_payload(item['payload']))
     serialized = builder.serialize()
     assert to_hex_string(serialized) == payload.upper(), comment
