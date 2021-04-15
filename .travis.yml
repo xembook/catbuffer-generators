@@ -32,7 +32,6 @@ env:
     - POST_RELEASE_BRANCH=main
     - RELEASE_MESSAGE=release
 before_script:
-  - export PYTHONPATH=$PYTHONPATH:./catbuffer
   - nvm install --lts
   - node --version
 script:
@@ -40,18 +39,22 @@ script:
   - validate_env_variables
 jobs:
   include:
-    - stage: test
-      name: pylint
-      script: pylint --load-plugins pylint_quotes generators
-    - name: pycodestyle
-      script: pycodestyle --config=.pycodestyle .
+    - stage: lint
+      script:
+        - pip install -r lint_requirements.txt
+        - pylint --load-plugins pylint_quotes generators
+        - pycodestyle --config=.pycodestyle .
 
-    - name: java
-      script: ./scripts/generate_java.sh
-    - name: typescript
-      script: ./scripts/generate_typescript.sh
+    - stage: generators
+      name: java generator
+      script:
+        - ./scripts/generate_java.sh
+    - name: typescript generator
+      script:
+        - ./scripts/generate_typescript.sh
     - name: python
-      script: ./scripts/generate_python.sh
+      script:
+        - ./scripts/generate_python.sh
 
     - stage: alpha
       name: java publish alpha
