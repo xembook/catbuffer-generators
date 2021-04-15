@@ -103,7 +103,7 @@ PYTHONPATH=".:${PYTHONPATH}" python3 setup.py sdist bdist_wheel build
 
 # Test
 echo "Testing..."
-pip install -r test_requirements.txt
+pip install -r ${rootDir}/test_requirements.txt
 PYTHONPATH="./src:${PYTHONPATH}" pytest -v --color=yes --exitfirst --showlocals --durations=5
 # Linter
 echo "Linting..."
