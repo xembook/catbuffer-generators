@@ -22,7 +22,7 @@ python3 -m catbuffer_parser \
   --include catbuffer-schemas/schemas \
   --output "$rootDir/build/java/$ARTIFACT_NAME/src/main/java/io/nem/symbol/catapult/builders" \
   --generator java \
-  --copyright catbuffer-schemas/HEADER.inc
+  --copyright HEADER.inc
 
 if [[ $OPERATION == "release" ]]; then
   ARTIFACT_VERSION="${ARTIFACT_VERSION%$SNAPSHOT_PREFIX}"

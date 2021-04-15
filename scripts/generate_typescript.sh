@@ -22,7 +22,7 @@ python3 -m catbuffer_parser \
   --include catbuffer-schemas/schemas \
   --output "$rootDir/build/typescript/$ARTIFACT_NAME/src" \
   --generator typescript \
-  --copyright catbuffer-schemas/HEADER.inc
+  --copyright HEADER.inc
 
 mkdir -p "$rootDir/build/typescript/$ARTIFACT_NAME/test/vector"
 cp -r "$rootDir/test/vector" "$rootDir/build/typescript/$ARTIFACT_NAME/test"

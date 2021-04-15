@@ -74,12 +74,12 @@ rm -rf "${rootDir}/catbuffer/_generated/python"
 rm -rf "${artifactBuildDir}"
 
 mkdir -p "${artifactPackageDir}"
-PYTHONPATH=".:${PYTHONPATH}" python3 "catbuffer/main.py" \
-  --schema catbuffer/schemas/all.cats \
-  --include catbuffer/schemas \
+python3 -m catbuffer_parser \
+  --schema catbuffer-schemas/schemas/all.cats \
+  --include catbuffer-schemas/schemas \
   --output "${artifactPackageDir}" \
   --generator python \
-  --copyright catbuffer/HEADER.inc
+  --copyright HEADER.inc
 
 touch "${artifactPackageDir}/__init__.py"
 cp "$rootDir/LICENSE" "${artifactBuildDir}"
@@ -103,9 +103,11 @@ PYTHONPATH=".:${PYTHONPATH}" python3 setup.py sdist bdist_wheel build
 
 # Test
 echo "Testing..."
+pip install -r test_requirements.txt
 PYTHONPATH="./src:${PYTHONPATH}" pytest -v --color=yes --exitfirst --showlocals --durations=5
 # Linter
 echo "Linting..."
+pip install -r lint_requirements.txt
 PYTHONPATH="./src:${PYTHONPATH}" pylint --rcfile .pylintrc --load-plugins pylint_quotes symbol_catbuffer
 # Deploy
 if [[ $upload == true ]]; then
