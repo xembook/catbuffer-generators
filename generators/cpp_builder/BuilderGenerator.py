@@ -24,7 +24,7 @@ class BuilderGenerator:
             return None
 
         name = next(self.current)
-        while name == 'Transaction' or name.startswith('Embedded') or not name.endswith('Transaction'):
+        while any(name.startswith(prefix) for prefix in ['Aggregate', 'Embedded', 'Transaction']) or not name.endswith('Transaction'):
             name = next(self.current)
         return name
 

@@ -17,12 +17,12 @@ echo "Building Typescript version $CURRENT_VERSION, operation $OPERATION"
 #rm -rf "$rootDir/build/typescript/$ARTIFACT_NAME"
 
 mkdir -p "$rootDir/build/typescript/$ARTIFACT_NAME/src/"
-PYTHONPATH=".:${PYTHONPATH}" python3 "catbuffer/main.py" \
-  --schema catbuffer/schemas/all.cats \
-  --include catbuffer/schemas \
+python3 -m catbuffer_parser \
+  --schema catbuffer-schemas/schemas/all.cats \
+  --include catbuffer-schemas/schemas \
   --output "$rootDir/build/typescript/$ARTIFACT_NAME/src" \
   --generator typescript \
-  --copyright catbuffer/HEADER.inc
+  --copyright HEADER.inc
 
 mkdir -p "$rootDir/build/typescript/$ARTIFACT_NAME/test/vector"
 cp -r "$rootDir/test/vector" "$rootDir/build/typescript/$ARTIFACT_NAME/test"

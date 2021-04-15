@@ -17,12 +17,12 @@ echo "Building Java version $CURRENT_VERSION, operation $OPERATION"
 #rm -rf "$rootDir/build/java/$ARTIFACT_NAME"
 
 mkdir -p "$rootDir/build/java/$ARTIFACT_NAME/src/main/java/io/nem/symbol/catapult/builders"
-PYTHONPATH=".:${PYTHONPATH}" python3 "catbuffer/main.py" \
-  --schema catbuffer/schemas/all.cats \
-  --include catbuffer/schemas \
+python3 -m catbuffer_parser \
+  --schema catbuffer-schemas/schemas/all.cats \
+  --include catbuffer-schemas/schemas \
   --output "$rootDir/build/java/$ARTIFACT_NAME/src/main/java/io/nem/symbol/catapult/builders" \
   --generator java \
-  --copyright catbuffer/HEADER.inc
+  --copyright HEADER.inc
 
 if [[ $OPERATION == "release" ]]; then
   ARTIFACT_VERSION="${ARTIFACT_VERSION%$SNAPSHOT_PREFIX}"

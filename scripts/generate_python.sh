@@ -74,12 +74,12 @@ rm -rf "${rootDir}/catbuffer/_generated/python"
 rm -rf "${artifactBuildDir}"
 
 mkdir -p "${artifactPackageDir}"
-PYTHONPATH=".:${PYTHONPATH}" python3 "catbuffer/main.py" \
-  --schema catbuffer/schemas/all.cats \
-  --include catbuffer/schemas \
+python3 -m catbuffer_parser \
+  --schema catbuffer-schemas/schemas/all.cats \
+  --include catbuffer-schemas/schemas \
   --output "${artifactPackageDir}" \
   --generator python \
-  --copyright catbuffer/HEADER.inc
+  --copyright HEADER.inc
 
 touch "${artifactPackageDir}/__init__.py"
 cp "$rootDir/LICENSE" "${artifactBuildDir}"
@@ -97,18 +97,28 @@ PYTEST_CACHE="$rootDir/test/python/.pytest_cache/"
 if [ -d "$PYTEST_CACHE" ]; then rm -Rf "$PYTEST_CACHE"; fi
 
 # Build
-cd "${artifactBuildDir}"
 echo "Building..."
+pushd "${artifactBuildDir}"
 PYTHONPATH=".:${PYTHONPATH}" python3 setup.py sdist bdist_wheel build
+popd
 
 # Test
 echo "Testing..."
+python3 -m pip install -r ${rootDir}/test_requirements.txt
+pushd "${artifactBuildDir}"
 PYTHONPATH="./src:${PYTHONPATH}" pytest -v --color=yes --exitfirst --showlocals --durations=5
+popd
+
 # Linter
 echo "Linting..."
+python3 -m pip install -r ${rootDir}/lint_requirements.txt
+pushd "${artifactBuildDir}"
 PYTHONPATH="./src:${PYTHONPATH}" pylint --rcfile .pylintrc --load-plugins pylint_quotes symbol_catbuffer
+popd
+
 # Deploy
 if [[ $upload == true ]]; then
+  pushd "${artifactBuildDir}"
   # Log intention
   if [[ $OPERATION == "release" ]]; then
     echo "Releasing python artifact[$artifactName $artifactVersion] to $repo"
@@ -132,4 +142,5 @@ if [[ $upload == true ]]; then
       PYTHONPATH=".:${PYTHONPATH}" python3 -m twine upload --repository $repo dist/*
     fi
   fi
+  popd
 fi
