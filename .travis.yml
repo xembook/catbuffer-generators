@@ -37,6 +37,7 @@ before_script:
 script:
   - . ./travis/travis-functions.sh
   - validate_env_variables
+  - git clone --depth 1 --branch v1.0.0 https://github.com/nemtech/catbuffer-schemas.git 
 jobs:
   include:
     - stage: lint
