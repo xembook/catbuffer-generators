@@ -97,18 +97,25 @@ PYTEST_CACHE="$rootDir/test/python/.pytest_cache/"
 if [ -d "$PYTEST_CACHE" ]; then rm -Rf "$PYTEST_CACHE"; fi
 
 # Build
-cd "${artifactBuildDir}"
 echo "Building..."
+pushd "${artifactBuildDir}"
 PYTHONPATH=".:${PYTHONPATH}" python3 setup.py sdist bdist_wheel build
+popd
 
 # Test
 echo "Testing..."
-pip install -r ${rootDir}/test_requirements.txt
+python3 -m pip install -r ${rootDir}/test_requirements.txt
+pushd "${artifactBuildDir}"
 PYTHONPATH="./src:${PYTHONPATH}" pytest -v --color=yes --exitfirst --showlocals --durations=5
+popd
+
 # Linter
 echo "Linting..."
-pip install -r lint_requirements.txt
+python3 -m pip install -r ${rootDir}/lint_requirements.txt
+pushd "${artifactBuildDir}"
 PYTHONPATH="./src:${PYTHONPATH}" pylint --rcfile .pylintrc --load-plugins pylint_quotes symbol_catbuffer
+popd
+
 # Deploy
 if [[ $upload == true ]]; then
   # Log intention

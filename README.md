@@ -53,7 +53,7 @@ git clone --depth 1 --branch v1.0.1 https://github.com/nemtech/catbuffer-schemas
 
 ```bash
 cd catbuffer-generators
-pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 ```
 
 ## Usage
@@ -72,8 +72,8 @@ Most of these scripts, after producing the code will compile it into an output a
 ### Run the linter
 
 ```bash
-pip install -r test_requirements.txt
-pip install -r lint_requirements.txt
+python3 -m pip install -r test_requirements.txt
+python3 -m pip install -r lint_requirements.txt
 pylint --load-plugins pylint_quotes generators
 pycodestyle --config=.pycodestyle .
 ```
