@@ -24,7 +24,7 @@ class BuilderGenerator:
             return None
 
         name = next(self.current)
-        while name == 'Transaction' or name.startswith('Embedded') or not name.endswith('Transaction'):
+        while name == 'Transaction' or name.startswith('Embedded') or not name.endswith('Transaction') or name.startswith('Aggregate'):
             name = next(self.current)
         return name
 
