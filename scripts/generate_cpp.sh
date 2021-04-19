@@ -3,7 +3,7 @@ set -e
 
 rootDir="$(dirname $0)/.."
 
-ARTIFACT_NAME="catbuffer-cpp"
+ARTIFACT_NAME="cpp-transaction-builders"
 RELEASE_VERSION="$(head -n 1 ${rootDir}/version.txt)"
 OPERATION="$1"
 SNAPSHOT_VERSION="${RELEASE_VERSION}-SNAPSHOT"
@@ -14,6 +14,10 @@ fi
 
 echo "Building C++ version $CURRENT_VERSION, operation $OPERATION"
 
-${rootDir}/scripts/generate_all.sh cpp_builder
-
-# TODO Fix aggregate and compile c++
+mkdir -p "${rootDir}/build/cpp/${ARTIFACT_NAME}/src/"
+python3 -m catbuffer_parser \
+  --schema catbuffer-schemas/schemas/all_transactions.cats \
+  --include catbuffer-schemas/schemas \
+  --output "${rootDir}/build/cpp/${ARTIFACT_NAME}/src" \
+  --generator cpp_builder \
+  --copyright HEADER.inc
