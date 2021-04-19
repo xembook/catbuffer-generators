@@ -24,7 +24,7 @@ class JavaHelper(Helper):
 
     def get_load_from_binary_factory(self, attribute_class_name):
         if attribute_class_name == 'EmbeddedTransactionBuilder':
-            return 'TransactionBuilderFactory'
+            return 'EmbeddedTransactionBuilderHelper'
         return attribute_class_name
 
     def get_condition_operation_text(self, op):

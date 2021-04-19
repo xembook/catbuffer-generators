@@ -230,26 +230,29 @@ public final class GeneratorUtils {
      *
      * @param size the payload size used to calcualted the padding
      * @param dataInputStream the input stream that will be moved the calcauted padding size
+     * @param alignment Next multiple alignment
      */
     public static void skipPadding(int size,
-        final DataInputStream dataInputStream) {
+        final DataInputStream dataInputStream, int alignment) {
         GeneratorUtils.propagate(() -> {
-            int padding = getPadding(size);
+            int padding = getPadding(size, alignment);
             dataInputStream.skipBytes(padding);
             return null;
         });
     }
 
     /**
-     * This method writes 0 into the dataOutputStream. The amount of 0s is the calculated padding size from provided
-     * payload size.
+     * This method writes 0 into the dataOutputStream. The amount of 0s is the calculated padding
+     * size from provided payload size.
      *
      * @param size the payload size used to calcualted the padding
      * @param dataOutputStream used to write the 0s.
+     * @param alignment Next multiple alignment
      */
-    public static void addPadding(int size, final DataOutputStream dataOutputStream) {
+    public static void addPadding(int size, final DataOutputStream dataOutputStream,
+        int alignment) {
         GeneratorUtils.propagate(() -> {
-            int padding = getPadding(size);
+            int padding = getPadding(size, alignment);
             while (padding > 0) {
                 dataOutputStream.write(0);
                 padding--;
@@ -262,10 +265,13 @@ public final class GeneratorUtils {
      * It calcualtes the padding that needs to be added/skipped when processing inner transactions.
      *
      * @param size the size of the payload using to calculate the padding
+     * @param alignment Next multiple alignment
      * @return the padding to be added/skipped.
      */
-    public static int getPadding(int size) {
-        int alignment = 8;
+    public static int getPadding(int size, int alignment) {
+        if (alignment == 0) {
+            return 0;
+        }
         return 0 == size % alignment ? 0 : alignment - (size % alignment);
     }
 
@@ -275,14 +281,18 @@ public final class GeneratorUtils {
      * @param builder the builder
      * @param stream the stream
      * @param count the elements to be read
+     * @param alignment Next multiple alignment
      * @param <T> the the type to be returned
      * @return a list of T.
      */
-    public static <T> List<T> loadFromBinaryArray(final Function<DataInputStream, T> builder,
-        final DataInputStream stream, final long count) {
+    public static <T extends Serializer> List<T> loadFromBinaryArray(
+        final Function<DataInputStream, T> builder,
+        final DataInputStream stream, final long count, final int alignment) {
         List<T> list = new java.util.ArrayList<>();
         for (int i = 0; i < count; i++) {
-            list.add(builder.apply(stream));
+            final T entity = builder.apply(stream);
+            list.add(entity);
+            GeneratorUtils.skipPadding(entity.getSize(), stream, alignment);
         }
         return list;
     }
@@ -294,12 +304,14 @@ public final class GeneratorUtils {
      * @param builder the entity builder
      * @param stream the stream to read from
      * @param payloadSize the payload size
+     * @param alignment alignment Next multiple alignment
      * @param <T> the type of the entity
      * @return a list of entities
      * @throws IOException when data cannot be loaded.
      */
     public static <T extends Serializer> List<T> loadFromBinaryArrayRemaining(
-        final Function<DataInputStream, T> builder, DataInputStream stream, int payloadSize)
+        final Function<DataInputStream, T> builder, DataInputStream stream, int payloadSize,
+        int alignment)
         throws IOException {
         final ByteBuffer byteCount = ByteBuffer.allocate(payloadSize);
         stream.read(byteCount.array());
@@ -309,7 +321,30 @@ public final class GeneratorUtils {
         while (dataInputStream.available() > 0) {
             T entity = builder.apply(dataInputStream);
             entities.add(entity);
-            GeneratorUtils.skipPadding(entity.getSize(), dataInputStream);
+            GeneratorUtils.skipPadding(entity.getSize(), dataInputStream, alignment);
+        }
+        return entities;
+    }
+
+    /**
+     * It reads all the remaining entities until the end.
+     *
+     * @param builder the entity builder
+     * @param stream the stream to read from
+     * @param alignment alignment Next multiple alignment
+     * @param <T> the type of the entity
+     * @return a list of entities
+     * @throws IOException when data cannot be loaded.
+     */
+    public static <T extends Serializer> List<T> loadFromBinaryArrayRemaining(
+        final Function<DataInputStream, T> builder, DataInputStream stream,
+        int alignment)
+        throws IOException {
+        List<T> entities = new java.util.ArrayList<>();
+        while (stream.available() > 0) {
+            T entity = builder.apply(stream);
+            entities.add(entity);
+            GeneratorUtils.skipPadding(entity.getSize(), stream, alignment);
         }
         return entities;
     }
@@ -319,13 +354,15 @@ public final class GeneratorUtils {
      *
      * @param dataOutputStream the stream to serialize into
      * @param entities the entities to be serialized
+     * @param alignment alignment Next multiple alignment
      * @throws IOException when data cannot be written.
      */
     public static void writeList(final DataOutputStream dataOutputStream,
-        final List<? extends Serializer> entities) throws IOException {
+        final List<? extends Serializer> entities, int alignment) throws IOException {
         for (Serializer entity : entities) {
             final byte[] entityBytes = entity.serialize();
             dataOutputStream.write(entityBytes, 0, entityBytes.length);
+            GeneratorUtils.addPadding(entityBytes.length, dataOutputStream, alignment);
         }
     }
 
@@ -350,7 +387,8 @@ public final class GeneratorUtils {
      * @return the buffer
      * @throws IOException when data cannot be read
      */
-    public static ByteBuffer readByteBuffer(final DataInputStream stream, final int size) throws IOException {
+    public static ByteBuffer readByteBuffer(final DataInputStream stream, final int size)
+        throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(size);
         stream.readFully(buffer.array());
         return buffer;
@@ -368,17 +406,34 @@ public final class GeneratorUtils {
 
     /**
      * Returns the size of the collection
-     * @param collection the collecion
+     *
+     * @param collection the collection
      * @return the size.
      */
     public static int getSize(final Collection<?> collection) {
         return collection.size();
     }
 
+    /**
+     * Returns the size of the collection
+     *
+     * @param collection the collection
+     * @param alignment alignment Next multiple alignment
+     * @return the size.
+     */
+    public static int getSumSize(final Collection<? extends Serializer> collection, int alignment) {
+        return collection.stream()
+            .mapToInt(o -> {
+                final int size = o.getSize();
+                return size + GeneratorUtils.getPadding(size, alignment);
+            }).sum();
+    }
+
     private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 
     /**
      * Basic to hex function that converts a byte array to an hex
+     *
      * @param bytes the bytes
      * @return the hex representation.
      */
@@ -394,6 +449,7 @@ public final class GeneratorUtils {
 
     /**
      * Basic from hex to byte array function.
+     *
      * @param hex the hex string
      * @return the byte array.
      */
@@ -409,6 +465,7 @@ public final class GeneratorUtils {
 
     /**
      * It writes the builder into a file for future unit testing.
+     *
      * @param <T> the type of the builder.
      * @param builder the builder.
      * @param file the file to append.

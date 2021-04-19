@@ -26,17 +26,17 @@ public class ${generator.generated_class_name}${(' extends ' + str(generator.gen
     % elif a.kind == helper.AttributeKind.SIZE_FIELD:
             final ${a.attribute_var_type} ${a.attribute_name} = ${helper.get_reverse_method_name(a.attribute_size).format('stream.' + helper.get_read_method_name(a.attribute_size) + '()')};
    % elif a.kind == helper.AttributeKind.ARRAY:
-            this.${a.attribute_name} = GeneratorUtils.loadFromBinaryArray(${helper.get_load_from_binary_factory(a.attribute_class_name)}::loadFromBinary, stream, ${a.attribute_size});
+            this.${a.attribute_name} = GeneratorUtils.loadFromBinaryArray(${helper.get_load_from_binary_factory(a.attribute_class_name)}::loadFromBinary, stream, ${a.attribute_size}, 0);
     % elif a.kind == helper.AttributeKind.CUSTOM and (not a.attribute_is_conditional or not a.conditional_read_before):
             this.${a.attribute_name} = ${helper.get_load_from_binary_factory(a.attribute_class_name)}.loadFromBinary(stream);
     % elif a.kind == helper.AttributeKind.CUSTOM:
             this.${a.attribute_name} = new ${helper.get_load_from_binary_factory(a.attribute_class_name)}(${a.attribute['condition']}Condition);
     % elif a.kind == helper.AttributeKind.FILL_ARRAY:
-            this.${a.attribute_name} = GeneratorUtils.loadFromBinaryArray(${helper.get_load_from_binary_factory(a.attribute_class_name)}::loadFromBinary, stream, ${a.attribute_size});
+            this.${a.attribute_name} = GeneratorUtils.loadFromBinaryArrayRemaining(${helper.get_load_from_binary_factory(a.attribute_class_name)}::loadFromBinary, stream, 0);
     % elif a.kind == helper.AttributeKind.FLAGS:
             this.${a.attribute_name} = ${'GeneratorUtils.toSet({0}, {1})'.format(a.attribute_class_name + '.class', helper.get_reverse_method_name(a.attribute_size).format('stream.' + helper.get_read_method_name(a.attribute_size) + '()'))};
     % elif a.kind == helper.AttributeKind.VAR_ARRAY:
-            this.${a.attribute_name} = GeneratorUtils.loadFromBinaryArrayRemaining(TransactionBuilderFactory::createEmbeddedTransactionBuilder, stream, payloadSize);
+            this.${a.attribute_name} = GeneratorUtils.loadFromBinaryArrayRemaining(${helper.get_load_from_binary_factory(a.attribute_class_name)}::loadFromBinary, stream, payloadSize, ${helper.resolve_alignment(a)});
     % else:
             FIX ME!
     % endif
@@ -171,8 +171,12 @@ public class ${generator.generated_class_name}${(' extends ' + str(generator.gen
         size += ${a.attribute_size}; // ${a.attribute_name}
     % elif a.kind == helper.AttributeKind.BUFFER:
         size += this.${a.attribute_name}.array().length;
-   % elif a.kind == helper.AttributeKind.ARRAY or a.kind == helper.AttributeKind.VAR_ARRAY or a.kind == helper.AttributeKind.FILL_ARRAY:
-        size += this.${a.attribute_name}.stream().mapToInt(o -> o.getSize()).sum();
+    % elif a.kind == helper.AttributeKind.ARRAY:
+        size +=  GeneratorUtils.getSumSize(this.${a.attribute_name}, 0);
+    % elif a.kind == helper.AttributeKind.FILL_ARRAY:
+        size +=  GeneratorUtils.getSumSize(this.${a.attribute_name}, 0);
+    % elif a.kind == helper.AttributeKind.VAR_ARRAY:
+        size +=  GeneratorUtils.getSumSize(this.${a.attribute_name}, ${helper.resolve_alignment(a)});
     % elif a.kind == helper.AttributeKind.FLAGS:
         size += ${a.attribute_class_name}.values()[0].getSize();
     % else:
@@ -225,12 +229,18 @@ public class ${generator.generated_class_name}${(' extends ' + str(generator.gen
 <%def name="renderSerialize(a)" filter="trim">\
     % if a.kind == helper.AttributeKind.SIMPLE and (generator.name != 'Receipt' or a.attribute_name != 'size'):
             dataOutputStream.${helper.get_write_method_name(a.attribute_size)}(${helper.get_reverse_method_name(a.attribute_size).format('('+ a.attribute_var_type +') this.get' + helper.capitalize_first_character(a.attribute_name) + '()')});
-   % elif a.kind == helper.AttributeKind.BUFFER:
+    % elif a.kind == helper.AttributeKind.BUFFER:
             dataOutputStream.write(this.${a.attribute_name}.array(), 0, this.${a.attribute_name}.array().length);
+    % elif a.kind == helper.AttributeKind.SIZE_FIELD and 'disposition' in a.parent_attribute and a.parent_attribute['disposition'] == 'var':
+            dataOutputStream.${helper.get_write_method_name(a.attribute_size)}(${helper.get_reverse_method_name(a.attribute_size).format('('+ a.attribute_var_type +') GeneratorUtils.getSumSize(this.get' + helper.capitalize_first_character(a.parent_attribute['name']) + '(), ' + str(helper.resolve_alignment(a)) + ')')});
     % elif a.kind == helper.AttributeKind.SIZE_FIELD:
             dataOutputStream.${helper.get_write_method_name(a.attribute_size)}(${helper.get_reverse_method_name(a.attribute_size).format('('+ a.attribute_var_type +') GeneratorUtils.getSize(this.get' + helper.capitalize_first_character(a.parent_attribute['name']) + '())')});
-   % elif a.kind == helper.AttributeKind.ARRAY or a.kind == helper.AttributeKind.VAR_ARRAY or a.kind == helper.AttributeKind.FILL_ARRAY:
-            GeneratorUtils.writeList(dataOutputStream, this.${a.attribute_name});
+    % elif a.kind == helper.AttributeKind.ARRAY:
+            GeneratorUtils.writeList(dataOutputStream, this.${a.attribute_name}, 0);
+    % elif a.kind == helper.AttributeKind.FILL_ARRAY:
+            GeneratorUtils.writeList(dataOutputStream, this.${a.attribute_name}, 0);
+    % elif a.kind == helper.AttributeKind.VAR_ARRAY:
+            GeneratorUtils.writeList(dataOutputStream, this.${a.attribute_name}, ${helper.resolve_alignment(a)});
     % elif a.kind == helper.AttributeKind.CUSTOM:
             GeneratorUtils.writeEntity(dataOutputStream, this.${a.attribute_name});
     % elif a.kind == helper.AttributeKind.FLAGS:

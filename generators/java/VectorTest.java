@@ -100,6 +100,7 @@ public class VectorTest {
                 .getMethod("loadFromBinary", DataInputStream.class).invoke(null,
                     inputStream);
             Assertions.assertEquals(item.payload.toUpperCase(), GeneratorUtils.toHex(serializer.serialize()).toUpperCase());
+            Assertions.assertEquals(item.payload.length() / 2, serializer.getSize());
         } catch (RuntimeException | ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             Assertions
                 .fail("Cannot run test " + item + " Error: " + ExceptionUtils.readStackTrace(e));
