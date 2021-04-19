@@ -21,5 +21,3 @@ python3 -m catbuffer_parser \
   --output "${rootDir}/build/cpp/${ARTIFACT_NAME}/src" \
   --generator cpp_builder \
   --copyright HEADER.inc
-
-

@@ -4,7 +4,7 @@
 
 Set of code generators to serialize and deserialize Catapult entities in different programming languages.
 
-In combination with the [catbuffer-parser](https://github.com/nemtech/catbuffer-parser) project and [catbuffer-schemas](https://github.com/nemtech/catbuffer-parser) developers can generate builder classes for a given set of programming languages. For example, the [Symbol SDKs](https://nemtech.github.io/sdk) use the generated code to operate with the entities in binary form before announcing them to the network.
+In combination with the [catbuffer-parser](https://github.com/nemtech/catbuffer-parser) project and [catbuffer-schemas](https://github.com/nemtech/catbuffer-schemas) developers can generate builder classes for a given set of programming languages. For example, the [Symbol SDKs](https://nemtech.github.io/sdk) use the generated code to operate with the entities in binary form before announcing them to the network.
 
 ## Supported programming languages
 
