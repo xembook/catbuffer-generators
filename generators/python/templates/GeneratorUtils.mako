@@ -8,11 +8,11 @@ class GeneratorUtils:
 
     @staticmethod
     def buffer_to_uint(buffer: bytes) -> int:
-        return int.from_bytes(buffer, byteorder='little', signed=False)
+        return int.from_bytes(buffer, byteorder='little', signed=True)
 
     @staticmethod
     def uint_to_buffer(uint: int, buffer_size: int) -> bytes:
-        return uint.to_bytes(buffer_size, byteorder='little', signed=False)
+        return uint.to_bytes(buffer_size, byteorder='little', signed=True)
 
     @staticmethod
     def concat_typed_arrays(array1, array2):
